@@ -1,0 +1,147 @@
+.category-section {
+  background: var(--p-50);
+  overflow: hidden;
+}
+
+
+
+.category-slider-wrapper {
+  position: relative;
+}
+
+.category-swiper {
+  width: 100%;
+  overflow: visible;
+}
+
+.category-swiper .swiper-slide {
+  height: auto;
+}
+
+.category-card {
+  width: 100%;
+  text-align: center;
+  cursor: pointer;
+  background-color: var(--bg-white);
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+  padding-bottom: 15px;
+  text-decoration: none;
+  
+}
+
+.category-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #eee9df;
+}
+
+.category-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+
+  transition:
+    transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.category-card:hover .category-image img {
+  transform: scale(1.06);
+}
+
+.category-name {
+  margin: 16px 0 0;
+
+  color: var(--text, #171717);
+  font-size: clamp(18px, 2.2rem, 2.5rem);
+  font-weight: 500;
+  line-height: 1.3;
+  font-family: var(--secondary-font);
+
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.category-nav {
+  position: absolute;
+  top: 45%;
+  z-index: 10;
+
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(23, 23, 23, 0.15);
+  border-radius: 50%;
+
+  background: rgba(250, 248, 243, 0.9);
+  color: var(--text, #171717);
+
+  cursor: pointer;
+
+  transition:
+    background 0.3s ease,
+    color 0.3s ease,
+    transform 0.3s ease;
+}
+
+.category-prev {
+  left: 15px;
+}
+
+.category-next {
+  right: 15px;
+}
+
+.category-nav:hover {
+  background: var(--primary, #0f3d32);
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.category-nav.swiper-button-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+
+/* Tablet */
+
+@media (max-width: 991.98px) {
+
+  .category-header {
+    margin-bottom: 30px;
+  }
+
+  .category-nav {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+
+/* Mobile */
+
+@media (max-width: 575.98px) {
+  .category-section {
+    padding: 0 20px;
+  }
+
+  .category-header {
+    margin-bottom: 25px;
+  }
+
+  .category-name {
+    margin-top: 12px;
+    font-size: 13px;
+    letter-spacing: 0.8px;
+  }
+
+  .category-nav {
+    display: none;
+  }
+}

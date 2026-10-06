@@ -1,0 +1,156 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useGetSearchQuery } from "../../../store/api/productApi";
+import "./Search.css";
+
+const searchSuggestions = [
+    "Pendant",
+    "Ring",
+    "Necklace",
+    "Bracelet",
+    "Earrings",
+];
+
+function Search({ isOpen, onClose }) {
+    const [searchSuggestion, setSearchSuggestion] = useState(0);
+    const [isAnimating, setIsAnimating] = useState(false);
+    const [query, setQuery] = useState("");
+    const [debouncedQuery, setDebouncedQuery] = useState("");
+    const navigate = useNavigate();
+    const { data, isFetching, isError } = useGetSearchQuery(
+        { q: debouncedQuery, per_page: 6 },
+        { skip: !isOpen || debouncedQuery.length < 2 }
+    );
+
+    const products = data?.data || [];
+    const categories = data?.meta?.categories || [];
+    const hasResults = products.length > 0 || categories.length > 0;
+
+    useEffect(() => {
+        const timeout = window.setTimeout(() => {
+            setDebouncedQuery(query.trim());
+        }, 350);
+
+        return () => window.clearTimeout(timeout);
+    }, [query]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+
+        const interval = setInterval(() => {
+            setIsAnimating(true);
+
+            setTimeout(() => {
+                setSearchSuggestion(
+                    (prev) => (prev + 1) % searchSuggestions.length
+                );
+
+                setIsAnimating(false);
+            }, 600);
+        }, 2200);
+
+        return () => clearInterval(interval);
+    }, [isOpen]);
+
+    const closeSearch = () => {
+        setQuery("");
+        setDebouncedQuery("");
+        onClose();
+    };
+
+    const openResult = (path) => {
+        navigate(path);
+        closeSearch();
+    };
+
+    return (
+        <div className={`search-panel ${isOpen ? "is-open" : ""}`}>
+            <div className="search-panel__inner">
+                <div className="search-input-wrapper">
+                    <span className="search-placeholder">
+                        <span>Search:</span>
+
+                        <span
+                            className={`search-placeholder__word ${isAnimating ? "is-exiting" : ""
+                                }`}
+                        >
+                            {searchSuggestions[searchSuggestion]}
+                        </span>
+                    </span>
+                    <input
+                        type="text"
+                        aria-label="Search jewellery"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                    />
+
+                    {isOpen && query.trim().length >= 2 ? (
+                        <div className="search-results" role="listbox" aria-label="Search results">
+                            {isFetching ? <p className="search-results__state">Searching...</p> : null}
+                            {!isFetching && isError ? <p className="search-results__state">Search is unavailable right now.</p> : null}
+                            {!isFetching && !isError && !hasResults ? <p className="search-results__state">No matching jewellery found.</p> : null}
+
+                            {!isFetching && !isError && categories.length > 0 ? (
+                                <div className="search-results__section">
+                                    <span className="search-results__heading">Categories</span>
+                                    {categories.slice(0, 4).map((category) => (
+                                        <button
+                                            className="search-result search-result--category"
+                                            type="button"
+                                            role="option"
+                                            key={category.id}
+                                            onClick={() => openResult(`/${category.slug}`)}
+                                        >
+                                            <span>{category.name}</span>
+                                            <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : null}
+
+                            {!isFetching && !isError && products.length > 0 ? (
+                                <div className="search-results__section">
+                                    <span className="search-results__heading">Products</span>
+                                    {products.map((product) => (
+                                        <button
+                                            className="search-result"
+                                            type="button"
+                                            role="option"
+                                            key={product.id}
+                                            onClick={() => openResult(`/product/${product.slug}`)}
+                                        >
+                                            <span className="search-result__image">
+                                                {product.primary_image || product.images?.[0] ? (
+                                                    <img src={product.primary_image || product.images[0]} alt="" />
+                                                ) : null}
+                                            </span>
+                                            <span className="search-result__copy">
+                                                <strong>{product.name}</strong>
+                                                <span>₹{Number(product.price).toLocaleString("en-IN")}</span>
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : null}
+                        </div>
+                    ) : null}
+                </div>
+
+                <button
+                    type="button"
+                    className="search-panel__close"
+                    onClick={closeSearch}
+                    aria-label="Close search"
+                >
+                    <span></span>
+                    <span></span>
+                </button>
+
+            </div>
+        </div>
+    );
+}
+
+export default Search;

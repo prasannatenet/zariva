@@ -1,0 +1,38 @@
+.top-bar {
+    width: 100%;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--p-900);
+    color: var(--p-100);
+    box-sizing: border-box;
+}
+
+.top-bar__left,
+.top-bar__right {
+    display: flex;
+    align-items: center;
+}
+
+.top-bar__left {
+    gap: 2.5rem;
+}
+
+.top-bar__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size:14px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.top-bar__link .material-symbols-outlined {
+    font-size: 18px;
+}
