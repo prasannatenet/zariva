@@ -164,7 +164,7 @@ function Account() {
                                         <p>Your balance, ready for your next visit.</p>
                                     </div>
                                     <div className="account-rewards__balance">
-                                        <span className="material-symbols-outlined" aria-hidden="true">toll</span>
+                                        <span className="material-symbols-outlined" aria-hidden="true">savings</span>
                                         <strong>{isAuthenticated
                                             ? Number(user?.gehna_coins ?? 0).toLocaleString("en-IN")
                                             : "—"}</strong>

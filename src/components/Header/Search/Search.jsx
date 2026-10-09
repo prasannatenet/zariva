@@ -11,7 +11,8 @@ const searchSuggestions = [
     "Earrings",
 ];
 
-function Search({ isOpen, onClose }) {
+function Search({ isOpen = false, onClose, inline = false }) {
+    const searchIsOpen = inline || isOpen;
     const [searchSuggestion, setSearchSuggestion] = useState(0);
     const [isAnimating, setIsAnimating] = useState(false);
     const [query, setQuery] = useState("");
@@ -19,7 +20,7 @@ function Search({ isOpen, onClose }) {
     const navigate = useNavigate();
     const { data, isFetching, isError } = useGetSearchQuery(
         { q: debouncedQuery, per_page: 6 },
-        { skip: !isOpen || debouncedQuery.length < 2 }
+        { skip: !searchIsOpen || debouncedQuery.length < 2 }
     );
 
     const products = data?.data || [];
@@ -35,7 +36,7 @@ function Search({ isOpen, onClose }) {
     }, [query]);
 
     useEffect(() => {
-        if (!isOpen) {
+        if (!searchIsOpen) {
             return;
         }
 
@@ -52,12 +53,12 @@ function Search({ isOpen, onClose }) {
         }, 2200);
 
         return () => clearInterval(interval);
-    }, [isOpen]);
+    }, [searchIsOpen]);
 
     const closeSearch = () => {
         setQuery("");
         setDebouncedQuery("");
-        onClose();
+        onClose?.();
     };
 
     const openResult = (path) => {
@@ -66,7 +67,7 @@ function Search({ isOpen, onClose }) {
     };
 
     return (
-        <div className={`search-panel ${isOpen ? "is-open" : ""}`}>
+        <div className={`search-panel ${searchIsOpen ? "is-open" : ""} ${inline ? "search-panel--inline" : ""}`}>
             <div className="search-panel__inner">
                 <div className="search-input-wrapper">
                     <span className="search-placeholder">
@@ -86,7 +87,13 @@ function Search({ isOpen, onClose }) {
                         onChange={(event) => setQuery(event.target.value)}
                     />
 
-                    {isOpen && query.trim().length >= 2 ? (
+                    {inline ? (
+                        <span className="material-symbols-outlined search-input-icon" aria-hidden="true">
+                            search
+                        </span>
+                    ) : null}
+
+                    {searchIsOpen && query.trim().length >= 2 ? (
                         <div className="search-results" role="listbox" aria-label="Search results">
                             {isFetching ? <p className="search-results__state">Searching...</p> : null}
                             {!isFetching && isError ? <p className="search-results__state">Search is unavailable right now.</p> : null}
@@ -138,15 +145,17 @@ function Search({ isOpen, onClose }) {
                     ) : null}
                 </div>
 
-                <button
-                    type="button"
-                    className="search-panel__close"
-                    onClick={closeSearch}
-                    aria-label="Close search"
-                >
-                    <span></span>
-                    <span></span>
-                </button>
+                {!inline ? (
+                    <button
+                        type="button"
+                        className="search-panel__close"
+                        onClick={closeSearch}
+                        aria-label="Close search"
+                    >
+                        <span></span>
+                        <span></span>
+                    </button>
+                ) : null}
 
             </div>
         </div>

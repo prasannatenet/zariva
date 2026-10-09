@@ -6,6 +6,7 @@ const Button = ({
     materialIcon,
     type = "button",
     onClick,
+    ariaLabel,
     disabled = false,
     fullWidth = false,
     className = "",
@@ -14,6 +15,7 @@ const Button = ({
         <button
             type={type}
             onClick={onClick}
+            aria-label={ariaLabel}
             disabled={disabled}
             className={`common-button ${fullWidth ? "common-button--full" : ""} ${className}`}
         >

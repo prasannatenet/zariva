@@ -36,7 +36,7 @@
 .section-title__heading {
   margin: 0;
   color: var(--text, #171717);
-  font-size: clamp(25px, 4.5rem, 4.6rem);
+  font-size: clamp(25px, 3.4rem, 3.5rem);
   font-weight: 500;
   line-height: 1.1;
   font-family: var(--primary-font);

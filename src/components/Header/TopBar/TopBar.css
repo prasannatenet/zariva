@@ -1,10 +1,10 @@
 .top-bar {
     width: 100%;
-    padding: 8px 20px;
+    padding: 6px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: var(--p-900);
+    background: var(--bg-black);
     color: var(--p-100);
     box-sizing: border-box;
 }
@@ -15,8 +15,138 @@
     align-items: center;
 }
 
+.top-bar__saleAlert {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: var(--p-100);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.top-bar__saleAlert-label {
+    text-transform: uppercase;
+}
+
+.top-bar__countdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.top-bar__countdown-unit {
+    min-width: 2rem;
+    padding: 0.2rem 0.35rem;
+    border-radius: 4px;
+    background: #fff;
+    color: var(--p-900);
+    text-align: center;
+    font-weight: 700;
+}
+
+.top-bar__countdown-separator {
+    color: #fff;
+    font-weight: 700;
+}
+
+
+@property --live-shine-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+}
+
+.live-rates {
+    --live-rates-fill: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.35rem 0.85rem;
+    
+    /* 1px space for the shine to render into */
+    border: 1px solid transparent; 
+    border-radius: 99px;
+    
+    /* The Secret Sauce: Layering the inner bg over the animated border glow */
+    background: 
+        var(--live-rates-fill) padding-box, 
+        conic-gradient(
+            from var(--live-shine-angle), 
+            rgba(234, 241, 255, 0.28) 0%,      /* Your static fallback border color */
+            rgba(234, 241, 255, 0.28) 75%, 
+            rgba(255, 255, 255, 0.7) 90%,     /* The sweeping white laser shine */
+            #ffffff 96%, 
+            rgba(234, 241, 255, 0.28) 100%
+        ) border-box;
+    
+    color: var(--p-100);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.045em;
+    cursor: pointer;
+    padding: 0;
+
+    
+    /* Native GPU-accelerated spin animation loop */
+    animation: spin-shine 3s linear infinite;
+    
+    /* Smooth handling for hover and active state variables */
+    transition: background 200ms ease, box-shadow 200ms ease;
+}
+
+/* 2. Interactive States */
+.live-rates:hover {
+    --live-rates-fill: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.1));
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.18);
+}
+
+.live-rates:active {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+}
+
+.live-rates:focus-visible {
+    outline: 2px solid var(--p-100);
+    outline-offset: 3px;
+}
+
+/* 3. Smooth Loop Keyframes */
+@keyframes spin-shine {
+    from {
+        --live-shine-angle: 0deg;
+    }
+    to {
+        --live-shine-angle: 360deg;
+    }
+}
+
+.live-rates div {
+    border-radius: 99px;
+    background-color: var(--p-900);
+    display: flex;
+    align-items: center;
+    padding: 4px 12px;
+    gap: 5px;
+}
+
+/* 4. Child Layout Safety (Ensures text/icon layers aren't affected by properties) */
+.live-rates__label,
+.live-rates__chevron
+ {
+    position: relative;
+    z-index: 1;
+    font-size: 13px;
+    font-weight: 400;
+    text-transform: uppercase;
+}
+
+
 .top-bar__left {
     gap: 2.5rem;
+    min-width: 0;
 }
 
 .top-bar__link {
@@ -35,4 +165,27 @@
 
 .top-bar__link .material-symbols-outlined {
     font-size: 18px;
+}
+
+@keyframes live-rates-pulse {
+    0% {
+        transform: scale(0.65);
+        opacity: 0.9;
+    }
+
+    100% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .live-rates,
+    .live-pulse::after {
+        animation: none;
+    }
+
+    .live-rates {
+        transition: none;
+    }
 }

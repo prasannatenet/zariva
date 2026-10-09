@@ -61,7 +61,7 @@
     border-radius: 50%;
     background: #e8e2d6;
     color: #4e493f;
-    font-family: var(--primary-font);
+    font-family: var(--se-font);
     font-size: 2rem;
 }
 
@@ -74,7 +74,7 @@
 .account-identity__eyebrow,
 .account-kicker {
     color: #8b7652;
-    font-size: 1rem;
+    font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.12em;
 }
@@ -186,7 +186,7 @@
 .account-page-heading h1 {
     margin: 0.5rem 0 0.7rem;
     color: #252923;
-    font-family: var(--primary-font);
+    font-family: var(--secondary-font);
     font-size: 3.8rem;
     font-weight: 500;
     line-height: 1.2;
@@ -207,7 +207,7 @@
     gap: 2rem;
     padding: 3rem 3.6rem;
     overflow: hidden;
-    background: #263d36;
+    background: var(--p-700);
     color: #fffdf8;
 }
 
@@ -218,12 +218,12 @@
 }
 
 .account-rewards .account-kicker {
-    color: #d9c6a0;
+    color: var(--p-300);
 }
 
 .account-rewards__copy h2 {
     margin: 0.6rem 0 0.2rem;
-    font-family: var(--primary-font);
+    font-family: var(--se-font);
     font-size: 2.8rem;
     font-weight: 500;
 }
@@ -247,7 +247,7 @@
 
 .account-rewards__balance strong {
     color: #fffdf8;
-    font-family: var(--primary-font);
+    font-family: var(--se-font);
     font-size: 3.2rem;
     font-weight: 500;
     line-height: 1.15;
@@ -263,7 +263,7 @@
     right: 13rem;
     bottom: -8rem;
     color: rgba(255, 255, 255, 0.035);
-    font-family: var(--primary-font);
+    font-family: var(--se-font);
     font-size: 26rem;
     line-height: 1;
     pointer-events: none;
@@ -296,7 +296,7 @@
 
 .account-stat > strong {
     color: #292d28;
-    font-family: var(--primary-font);
+    font-family: var(--se-font);
     font-size: 2.2rem;
     font-weight: 500;
 }
@@ -339,7 +339,7 @@
     gap: 0.8rem;
     margin: 0.2rem 0 0;
     color: #292d28;
-    font-family: var(--primary-font);
+    font-family: var(--se-font);
     font-size: 2.5rem;
     font-weight: 500;
 }
@@ -487,7 +487,7 @@
 .account-wishlist-item__copy a {
     overflow-wrap: anywhere;
     color: #30342e;
-    font-family: var(--primary-font);
+    font-family: var(--se-font);
     font-size: 1.8rem;
     line-height: 1.3;
     text-decoration: none;
@@ -548,7 +548,7 @@
 .account-empty h3 {
     margin: 1rem 0 0.3rem;
     color: #30342e;
-    font-family: var(--primary-font);
+    font-family: var(--se-font);
     font-size: 2.2rem;
     font-weight: 500;
 }

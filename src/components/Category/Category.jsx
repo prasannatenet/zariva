@@ -5,6 +5,8 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation } from "swiper/modules";
 
 import { useGetCategoriesQuery } from "../../store/api/categoryApi";
+import SectionTitle from "../SectionTitle/SectionTitle";
+
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -29,8 +31,9 @@ const Category = () => {
     }
 
     return (
-        <section className="category-section pt-100 pb-50">
+        <section className="category-section pt-30 pb-50">
             <div className="container-fluid">
+               <SectionTitle title="Shop By Category" className="mb-30" />
                 <div className="category-slider-wrapper">
                     <Swiper
                         modules={[Autoplay, Navigation]}
@@ -74,7 +77,7 @@ const Category = () => {
                             },
 
                             1200: {
-                                slidesPerView: 6.25,
+                                slidesPerView: 4,
                                 spaceBetween: 20,
                             },
                         }}
@@ -92,9 +95,14 @@ const Category = () => {
                                         />
                                     </div>
 
-                                    <h3 className="category-name">
-                                        {category.name}
-                                    </h3>
+                                    <div className="category-caption">
+                                        <h3 className="category-name">
+                                            {category.name}
+                                        </h3>
+                                        <span className="category-show-now">
+                                            Show Now
+                                        </span>
+                                    </div>
                                 </Link>
                             </SwiperSlide>
                         ))}

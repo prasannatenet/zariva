@@ -1,11 +1,17 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay } from "swiper/modules";
+import "swiper/css";
 import "./Hero.css";
 
-import heroRing from "../../assets/images/hero-ring.png";
-import heroPendant from "../../assets/images/hero-pendent.png";
-import heroBracelet from "../../assets/images/hero-ring.png";
+import heroRing from "../../assets/images/BANNER_01.png";
+import heroPendant from "../../assets/images/BANNER_02.png";
+import heroBracelet from "../../assets/images/BANNER_03.png";
 
 function Hero() {
+    const swiperRef = useRef(null);
+    const [activeIndex, setActiveIndex] = useState(0);
+
     const slides = [
         {
             id: 1,
@@ -23,146 +29,74 @@ function Hero() {
             alt: "Bracelet Collection",
         },
     ];
-
-    const [activeIndex, setActiveIndex] = useState(0);
-    const [direction, setDirection] = useState("next");
-    const [isAnimating, setIsAnimating] = useState(false);
-
-    const totalSlides = slides.length;
-
-    const nextSlide = () => {
-        if (isAnimating) {
-            return;
-        }
-
-        setDirection("next");
-        setIsAnimating(true);
-
-        setTimeout(() => {
-            setActiveIndex((prev) => (prev + 1) % totalSlides);
-            setIsAnimating(false);
-        }, 800);
-    };
-
-    const prevSlide = () => {
-        if (isAnimating) {
-            return;
-        }
-
-        setDirection("prev");
-        setIsAnimating(true);
-
-        setTimeout(() => {
-            setActiveIndex(
-                (prev) => (prev - 1 + totalSlides) % totalSlides
-            );
-            setIsAnimating(false);
-        }, 800);
-    };
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            nextSlide();
-        }, 10000);
-
-        return () => clearInterval(interval);
-    }, [activeIndex, isAnimating]);
-
-    const getPosition = (index) => {
-        if (index === activeIndex) {
-            return "is-center";
-        }
-
-        const nextIndex = (activeIndex + 1) % totalSlides;
-        const prevIndex =
-            (activeIndex - 1 + totalSlides) % totalSlides;
-
-        if (index === nextIndex) {
-            return "is-right";
-        }
-
-        if (index === prevIndex) {
-            return "is-left";
-        }
-
-        return "is-hidden";
-    };
+    const loopSlides = [...slides, ...slides].map((slide, index) => ({
+        ...slide,
+        id: `${slide.id}-${index}`,
+    }));
 
     return (
         <section className="hero">
-
-            <div
-                className={`hero__slider ${
-                    isAnimating ? `is-${direction}` : ""
-                }`}
+            <Swiper
+                modules={[Autoplay]}
+                className="hero__swiper"
+                slidesPerView={1.24}
+                spaceBetween="1%"
+                centeredSlides
+                loop
+                speed={800}
+                autoplay={{
+                    delay: 10000,
+                    disableOnInteraction: false,
+                }}
+                onSwiper={(swiper) => {
+                    swiperRef.current = swiper;
+                    setActiveIndex(swiper.realIndex % slides.length);
+                }}
+                onSlideChange={(swiper) => {
+                    setActiveIndex(swiper.realIndex % slides.length);
+                }}
             >
-                {slides.map((slide, index) => (
-                    <div
-                        className={`hero-slide ${getPosition(index)}`}
-                        key={slide.id}
-                    >
+                {loopSlides.map((slide) => (
+                    <SwiperSlide key={slide.id}>
                         <img
                             src={slide.image}
                             alt={slide.alt}
                             className="hero-slide__image"
                         />
-                    </div>
+                    </SwiperSlide>
+                ))}
+            </Swiper>
+
+            <button
+                type="button"
+                className="hero__arrow hero__arrow--prev"
+                onClick={() => swiperRef.current?.slidePrev()}
+                aria-label="Previous slide"
+            >
+                ←
+            </button>
+
+            <button
+                type="button"
+                className="hero__arrow hero__arrow--next"
+                onClick={() => swiperRef.current?.slideNext()}
+                aria-label="Next slide"
+            >
+                →
+            </button>
+
+            <div className="hero__pagination" aria-label="Choose a slide">
+                {slides.map((slide, index) => (
+                    <button
+                        type="button"
+                        key={slide.id}
+                        className={`hero__dot ${index === activeIndex ? "is-active" : ""}`}
+                        onClick={() => swiperRef.current?.slideToLoop(index)}
+                        aria-label={`Go to slide ${index + 1}`}
+                        aria-current={index === activeIndex ? "true" : undefined}
+                    />
                 ))}
             </div>
-
-            <div className="hero__controls">
-
-                <button
-                    type="button"
-                    className="hero__arrow"
-                    onClick={prevSlide}
-                    aria-label="Previous slide"
-                >
-                    ←
-                </button>
-
-                <div className="hero__pagination">
-                    {slides.map((slide, index) => (
-                        <button
-                            type="button"
-                            key={slide.id}
-                            className={`hero__dot ${
-                                index === activeIndex
-                                    ? "is-active"
-                                    : ""
-                            }`}
-                            onClick={() => {
-                                if (index === activeIndex || isAnimating) {
-                                    return;
-                                }
-
-                                if (
-                                    index ===
-                                    (activeIndex + 1) % totalSlides
-                                ) {
-                                    nextSlide();
-                                } else {
-                                    prevSlide();
-                                }
-                            }}
-                            aria-label={`Go to slide ${index + 1}`}
-                        >
-                            <span></span>
-                        </button>
-                    ))}
-                </div>
-
-                <button
-                    type="button"
-                    className="hero__arrow"
-                    onClick={nextSlide}
-                    aria-label="Next slide"
-                >
-                    →
-                </button>
-
-            </div>
-
         </section>
     );
 }

@@ -1,14 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Pagination } from "swiper/modules";
 
 import { useNavigate } from "react-router-dom";
 import { Link, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-
-import "swiper/css";
-import "swiper/css/pagination";
 
 import Button from "../Button/Button";
 import { useAddToCartMutation } from "../../store/api/authApi";
@@ -17,9 +12,7 @@ import "./ProductCard.css";
 
 
 const ProductCard = ({ product }) => {
-    const swiperRef = useRef(null);
     const toastTimeoutRef = useRef(null);
-    const [isHovered, setIsHovered] = useState(false);
     const [toast, setToast] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
@@ -28,6 +21,8 @@ const ProductCard = ({ product }) => {
     const isWishlisted = useSelector((state) => state.wishlist.some(
         (item) => String(item.id ?? item.slug) === String(product.id ?? product.slug)
     ));
+    const primaryImage = product.primary_image || product.images?.[0];
+    const secondaryImage = product.images?.find((image) => image !== primaryImage);
 
     useEffect(() => () => window.clearTimeout(toastTimeoutRef.current), []);
 
@@ -79,61 +74,40 @@ const ProductCard = ({ product }) => {
 
     return (
         <>
-        <article
-            className={`product-card ${isHovered ? "is-hovered" : ""}`}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
-            <div className="product-card__image-wrapper"
+        <article className="product-card">
+            <div
+                className="product-card__image-wrapper"
                 onClick={() => navigate(`/product/${product.slug}`)}
+                onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        navigate(`/product/${product.slug}`);
+                    }
+                }}
                 role="button"
-                tabIndex={0}>
+                tabIndex={0}
+            >
 
                 {product.is_on_sale && product.discount_percentage > 0 && (
                     <span className="product-card__badge">
                         {Math.round(product.discount_percentage)}% OFF
                     </span>
                 )}
-                <Swiper
-                    modules={[Pagination]}
-                    onSwiper={(swiper) => {
-                        swiperRef.current = swiper;
-                    }}
-                    slidesPerView={1}
-                    spaceBetween={0}
-                    speed={600}
-                    loop={true}
-                    pagination={{
-                        clickable: true,
-                    }}
-                    className="product-card__swiper"
-                >
-                    {product.images?.map((image, index) => (
-                        <SwiperSlide key={index}>
-                            <img
-                                src={image}
-                                alt={`${product.name} ${index + 1}`}
-                                className="product-card__image"
-                            />
-                        </SwiperSlide>
-                    ))}
-                </Swiper>
-
-                {/* LEFT HOVER ZONE */}
-                <div
-                    className="product-card__hover-zone product-card__hover-zone--left"
-                    onMouseEnter={() => {
-                        swiperRef.current?.slidePrev();
-                    }}
-                />
-
-                {/* RIGHT HOVER ZONE */}
-                <div
-                    className="product-card__hover-zone product-card__hover-zone--right"
-                    onMouseEnter={() => {
-                        swiperRef.current?.slideNext();
-                    }}
-                />
+                {primaryImage && (
+                    <img
+                        src={primaryImage}
+                        alt={product.name}
+                        className="product-card__image product-card__image--primary"
+                    />
+                )}
+                {secondaryImage && (
+                    <img
+                        src={secondaryImage}
+                        alt={`${product.name} alternate view`}
+                        className="product-card__image product-card__image--secondary"
+                        aria-hidden="true"
+                    />
+                )}
 
                 {/* WISHLIST */}
                 <button

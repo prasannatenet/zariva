@@ -1,50 +1,44 @@
 
-import { useGetCategoryProductsQuery, useGetProductsQuery } from "../../../store/api/productApi";
+import { useGetProductsQuery } from "../../../store/api/productApi";
 
 import Hero from "../../../components/Hero/Hero";
 import Category from "../../../components/Category/Category";
 import ProductCard from "../../ProductCard/ProductCard";
 import SectionTitle from "../../SectionTitle/SectionTitle";
-import ShopByCollection from "../../ShopByCollection/ShopByCollection";
 import CardSpread from "../../CardSpread/CardSpread";
-import CategoryProductShowcase from "../../CategoryProductShowcase/CategoryProductShowcase";
+import NewArrivals from "../../NewArrivals/NewArrivals";
+import VideoGallery from "../../VideoGallery/VideoGallery";
+import HotOffer from "../../HotOffer/HotOffer";
+import InstagramSection from "../../InstagramSection/InstagramSection";
 
 function Home() {
-    const { data, isLoading, isError } = useGetProductsQuery({ per_page: 60 });
-    const { data: ringsData } = useGetCategoryProductsQuery({ slug: "rings", per_page: 7 });
+    const { data } = useGetProductsQuery({ per_page: 60 });
     const products = data?.data || [];
-    const ringProducts = ringsData?.data || [];
+    const latestProducts = products.slice(0, 8);
 
     return (
         <>
             {/* Hero Slider */}
             <Hero />
             <Category />
+            <NewArrivals />
+            <HotOffer />
 
-            <section className="pt-100">
+            <section className="latest-collection py-60">
                 <div className="container">
                     <SectionTitle title="Latest Collection" className="mb-30" />
-                </div>
-                <div className="product-grid">
-                    {products.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
+                    <div className="product-grid">
+                        {latestProducts.map((product) => (
+                            <ProductCard key={product.id} product={product} />
+                        ))}
+                    </div>
                 </div>
             </section>
 
-            <CardSpread
-                products={products}
-                categoryName={ringsData?.category?.name || "Rings"}
-                categoryUrl={ringsData?.category?.url}
-            />
+            <CardSpread />
+            <VideoGallery />
+            <InstagramSection products={products} />
 
-
-            <ShopByCollection products={products} isLoading={isLoading} isError={isError} />
-
-            <CategoryProductShowcase
-                products={ringProducts}
-                categoryName={ringsData?.category?.name || "Rings"}
-            />
         </>
     );
 }

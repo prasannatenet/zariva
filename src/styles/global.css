@@ -1,6 +1,8 @@
 .pt-30 { padding-top: 3rem;}
 .pt-100 { padding-top: 10rem;}
 
+.py-60 { padding-top: 6rem; padding-bottom: 6rem;}
+
 .pb-30 { padding-bottom: 3rem;}
 .pb-50 { padding-bottom: 5rem;}
 
@@ -13,9 +15,11 @@
 .align-items-center { align-items: center;}
 .justify-center { justify-content: center;}
 
-.product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: clamp(20px, 3rem, 3rem); padding: 0 3rem;}
-.container { max-width: var(--container-width); margin: auto;}
+.product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: clamp(20px, 3rem, 3rem);}
+.container { max-width: var(--container-width); margin: auto; padding: 0 20px; box-sizing: content-box;}
 
+
+.latest-collection { background-color: #fbfbfb;}
 
 
 .loading__spinner {

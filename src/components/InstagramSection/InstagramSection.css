@@ -1,0 +1,408 @@
+.instagram-section {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(4rem, 7vw, 9rem) max(2rem, calc((100% - var(--container-width)) / 2));
+    background:
+        radial-gradient(ellipse at 15% 5%, rgb(255 255 255 / 86%), transparent 42%),
+        linear-gradient(115deg, #f1ede7 0%, #e8e3da 58%, #f7f5f1 100%);
+}
+
+.instagram-section__inner {
+    position: relative;
+    display: grid;
+    min-height: 68rem;
+    grid-template-columns: minmax(25rem, 0.85fr) minmax(0, 2.1fr);
+    align-items: center;
+    gap: clamp(2rem, 4vw, 6rem);
+}
+
+.instagram-section__intro {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 2.4rem;
+}
+
+.instagram-section__profile {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    color: var(--p-900);
+    text-decoration: none;
+}
+
+.instagram-section__avatar,
+.instagram-section__mini-avatar {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid var(--s-300);
+    border-radius: 50%;
+    color: var(--s-700);
+    font-family: var(--primary-font);
+}
+
+.instagram-section__avatar {
+    width: 4.2rem;
+    height: 4.2rem;
+    font-size: 2.2rem;
+}
+
+.instagram-section__profile-copy {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.instagram-section__profile-copy strong {
+    font-size: 1.4rem;
+    font-weight: 500;
+}
+
+.instagram-section__profile-copy > span {
+    color: #6c6b66;
+    font-size: 1.1rem;
+}
+
+.instagram-section__follow {
+    min-height: 3.8rem;
+    padding: 0.7rem 1.7rem;
+    background: var(--p-800);
+    color: var(--text-white);
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+}
+
+.instagram-section__follow .common-button__fill {
+    background: var(--p-900);
+}
+
+.instagram-section__phone {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: min(100%, 28rem);
+    justify-self: center;
+    margin-top: 4.5rem;
+    padding: 0.8rem;
+    border: 0.5rem solid #262422;
+    border-radius: 3.8rem;
+    background: #262422;
+    box-shadow: 0 1.8rem 4rem rgb(44 39 32 / 22%);
+    color: var(--p-900);
+    text-decoration: none;
+}
+
+.instagram-section__phone-screen {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 2.8rem;
+    background: #fff;
+}
+
+.instagram-section__phone-notch {
+    position: absolute;
+    top: 0.65rem;
+    left: 50%;
+    z-index: 3;
+    width: 8rem;
+    height: 1.8rem;
+    border-radius: 0 0 1.4rem 1.4rem;
+    background: #262422;
+    transform: translateX(-50%);
+}
+
+.instagram-section__phone-header {
+    display: flex;
+    height: 6.4rem;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 1.7rem 1.2rem 0;
+    border-bottom: 1px solid #efefef;
+}
+
+.instagram-section__mini-avatar {
+    width: 3.2rem;
+    height: 3.2rem;
+    border-color: var(--s-300);
+    background: var(--p-50);
+    font-size: 1.5rem;
+}
+
+.instagram-section__phone-header > span:nth-child(2) {
+    display: grid;
+    min-width: 0;
+    flex: 1;
+    gap: 0.15rem;
+}
+
+.instagram-section__phone-header strong {
+    overflow: hidden;
+    font-size: 1.05rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.instagram-section__phone-header small {
+    color: #696969;
+    font-size: 0.9rem;
+}
+
+.instagram-section__phone-header > .material-symbols-outlined {
+    font-size: 2rem;
+}
+
+.instagram-section__phone-post {
+    position: relative;
+    width: 100%;
+    flex: 0 0 auto;
+    overflow: hidden;
+    background: #e7e1d8;
+}
+
+.instagram-section__phone-reel {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+.instagram-section__post-count {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 2rem;
+    background: rgb(16 28 53 / 65%);
+    color: #fff;
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.instagram-section__phone-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    padding: 1.1rem 1.2rem 0.2rem;
+}
+
+.instagram-section__phone-actions .material-symbols-outlined {
+    font-size: 2rem;
+}
+
+.instagram-section__phone-actions .instagram-section__bookmark {
+    margin-left: auto;
+}
+
+.instagram-section__phone-caption {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 0;
+    padding: 0.4rem 1.2rem 2rem;
+    font-size: 1rem;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.instagram-section__phone-caption strong {
+    margin-right: 0.35rem;
+}
+
+.instagram-section__phone-home-indicator {
+    position: absolute;
+    bottom: 0.55rem;
+    left: 50%;
+    width: 8rem;
+    height: 0.35rem;
+    border-radius: 1rem;
+    background: #222;
+    transform: translateX(-50%);
+}
+
+.instagram-section__feed {
+    display: grid;
+    height: 55rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.4rem;
+    overflow: hidden;
+    mask-image: linear-gradient(transparent, #000 8%, #000 92%, transparent);
+}
+
+.instagram-section__feed-column {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.instagram-section__feed-track {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+    animation: instagram-feed-scroll 34s linear infinite;
+    will-change: transform;
+}
+
+.instagram-section__feed-column--2 .instagram-section__feed-track {
+    animation-direction: reverse;
+    animation-duration: 42s;
+}
+
+.instagram-section__feed-column--3 .instagram-section__feed-track {
+    animation-duration: 38s;
+}
+
+.instagram-section__feed:hover .instagram-section__feed-track {
+    animation-play-state: paused;
+}
+
+.instagram-section__feed-group {
+    display: grid;
+    flex: 0 0 auto;
+    gap: 1.4rem;
+}
+
+.instagram-section__feed-post {
+    position: relative;
+    display: block;
+    aspect-ratio: 0.86;
+    overflow: hidden;
+    background: #d1cabc;
+}
+
+.instagram-section__feed-post img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 500ms ease;
+}
+
+.instagram-section__feed-post:hover img,
+.instagram-section__feed-post:focus-visible img {
+    transform: scale(1.06);
+}
+
+.instagram-section__feed-overlay {
+    position: absolute;
+    inset: auto 0 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 2.4rem 0.8rem 0.8rem;
+    background: linear-gradient(transparent, rgb(16 28 53 / 72%));
+    color: #fff;
+    font-size: 1rem;
+    opacity: 0;
+    transition: opacity 200ms ease;
+}
+
+.instagram-section__feed-overlay .material-symbols-outlined {
+    font-size: 1.6rem;
+}
+
+.instagram-section__feed-post:hover .instagram-section__feed-overlay,
+.instagram-section__feed-post:focus-visible .instagram-section__feed-overlay {
+    opacity: 1;
+}
+
+@keyframes instagram-feed-scroll {
+    from { transform: translateY(0); }
+    to { transform: translateY(calc(-50% - 0.7rem)); }
+}
+
+@media (max-width: 1000px) {
+    .instagram-section__inner {
+        min-height: 0;
+        grid-template-columns: minmax(20rem, 0.85fr) minmax(0, 1.4fr);
+        gap: 3rem;
+    }
+
+    .instagram-section__intro {
+        left: 0;
+    }
+
+    .instagram-section__phone {
+        width: min(28rem, 86%);
+    }
+
+    .instagram-section__feed {
+        height: 50rem;
+        gap: 1rem;
+    }
+
+    .instagram-section__feed-track,
+    .instagram-section__feed-group {
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 760px) {
+    .instagram-section {
+        padding: 3.2rem 1.6rem 2.4rem;
+    }
+
+    .instagram-section__inner {
+        min-height: 0;
+        grid-template-columns: 1fr;
+        gap: 2.4rem;
+    }
+
+    .instagram-section__intro {
+        position: relative;
+        top: auto;
+        left: auto;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .instagram-section__profile {
+        gap: 0.8rem;
+    }
+
+    .instagram-section__profile-copy > span {
+        max-width: 18rem;
+        font-size: 1rem;
+    }
+
+    .instagram-section__follow {
+        flex: 0 0 auto;
+        min-height: 3.6rem;
+        padding: 0.6rem 1rem;
+        font-size: 0.95rem;
+    }
+
+    .instagram-section__phone {
+        width: min(28rem, 82%);
+        margin: 0 auto;
+    }
+
+    .instagram-section__feed {
+        height: 34rem;
+        grid-template-columns: repeat(3, minmax(12rem, 1fr));
+        gap: 0.8rem;
+    }
+
+    .instagram-section__feed-track,
+    .instagram-section__feed-group {
+        gap: 0.8rem;
+    }
+
+    .instagram-section__feed-post {
+        aspect-ratio: 0.82;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .instagram-section__feed-track {
+        animation: none;
+    }
+
+    .instagram-section__feed-post img,
+    .instagram-section__feed-overlay {
+        transition: none;
+    }
+}

@@ -26,18 +26,21 @@
     /*  BACKGROUND */
     --bg-color: #E9E0DB;
     --bg-white: #fff;
+    --bg-dark: #18191B;
+    --bg-black: #18191B;
+    --text-white: #fff;
 
     /*  TEXT */
     --text-color: #18191B;
 
     /*  FONTS */
-    --primary-font: "El Messiri", sans-serif;
-    --secondary-font: "Yrsa", serif;
-    --body-font: "Poppins", sans-serif;
+    --primary-font: "Jost", sans-serif;
+    --secondary-font: "Jost", sans-serif;
+    --body-font: "Jost", sans-serif;
 
 
     /* LAYOUT */
-    --container-width: 1440px;
+    --container-width: 1520px;
     /* BORDERS */
 
     --border-color: rgba(16, 28, 53, 0.15);

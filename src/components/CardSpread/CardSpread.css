@@ -1,162 +1,159 @@
 .card-spread {
-    overflow: hidden;
-    padding: 7.2rem 2.4rem 5rem;
-    background: #f7f3ef;
-}
-
-.card-spread__heading {
-    max-width: 70rem;
-    margin: 0 auto;
-    text-align: center;
-}
-
-.card-spread__eyebrow {
-    color: var(--s-200);
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.16em;
-    margin-bottom: 20px;
-    display: inline-block;
-}
-.spread-card-heading p { margin-top: 0;}
-.spread-card-heading .title-bottom-divider { margin-top: 3rem;}
-
-
-.card-spread__stage {
-    width: 100%;
-    max-width: 1600px;
-    height: 65rem;
-    margin: 2rem auto 0;
-    perspective: 110rem;
-}
-
-.card-spread__deck {
-    position: relative;
-    width: 100%;
-    height: 100%;
-}
-
-.card-spread__card {
-    position: absolute;
-    bottom: 19rem;
-    display: flex;
-    width: clamp(17rem, 18vw, 30rem);
-    height: 40rem;
-    flex-direction: column;
-    overflow: hidden;
-    border: 1px solid rgba(16, 28, 53, 0.1);
-    border-radius: 0.8rem;
+    padding: 6rem 0;
     background: #fff;
-    box-shadow: 0 1.4rem 3.4rem rgba(29, 24, 19, 0.17);
-    color: var(--p-900);
-    text-decoration: none;
-    transform: translateX(-50%) rotate(var(--card-angle));
-    transform-origin: center;
-    transition:
-        transform 420ms cubic-bezier(0.2, 0.75, 0.25, 1),
-        opacity 320ms ease,
-        box-shadow 320ms ease;
-    will-change: transform;
-    top: 10rem;
 }
 
-.card-spread__stage.has-active-card .card-spread__card:not(.is-active) {
-    opacity: 0.76;
-}
-
-.card-spread__card.is-active {
-    box-shadow: 0 2rem 4.2rem rgba(29, 24, 19, 0.24);
-    transform: translateX(-50%) rotate(0deg) scale(1.5);
-}
-
-.card-spread__image-wrap {
+.card-spread__layout {
     display: grid;
-    min-height: 0;
-    flex: 1;
-    place-items: center;
-    overflow: hidden;
-    background: #f5f3f0;
+    grid-template-columns: minmax(0, 2fr) minmax(27rem, 0.95fr);
+    align-items: center;
+    gap: 4.4rem;
+    margin: 0 auto;
+    padding: 0 7rem;
 }
 
-.card-spread__image-wrap img {
+.card-spread__image {
+    position: relative;
+    min-height: 63rem;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    background: #f3f0ec;
+}
+
+.card-spread__image img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 500ms ease;
+    animation: card-spread-image-rise 650ms cubic-bezier(0.2, 0.75, 0.25, 1);
 }
 
-.card-spread__card.is-active .card-spread__image-wrap img {
-    transform: scale(1.045);
+.card-spread__content {
+    padding: 2rem 0;
 }
 
-.card-spread__caption {
-    padding: 1.2rem 1.4rem 1.4rem;
-}
-
-.card-spread__caption > span {
-    color: #797168;
-    font-size: 1rem;
-    text-transform: uppercase;
-}
-
-.card-spread__caption h3 {
-    display: -webkit-box;
-    overflow: hidden;
-    margin: 0.35rem 0;
-    font-size: 1.3rem;
+.card-spread__eyebrow {
+    display: inline-block;
+    margin-bottom: 1.4rem;
+    color: #373737;
+    font-size: 1.1rem;
     font-weight: 500;
-    line-height: 1.35;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 1;
+    letter-spacing: 0.04em;
 }
 
-.card-spread__caption p {
-    margin: 0;
-    font-size: 1.3rem;
+.card-spread__content h2 {
+    margin: 0 0 3rem;
+    color: #222;
+    font-family: var(--primary-font);
+    font-size: clamp(3rem, 3vw, 4.4rem);
+    font-weight: 500;
+    line-height: 1.28;
+}
+
+.card-spread__categories {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #d8d5d1;
+    gap: 1rem;
+}
+
+.card-spread__category {
+    display: flex;
+    min-height: 3.8rem;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.8rem 1.2rem;
+    border: 0;
+    background: transparent;
+    color: #999;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: color 200ms ease;
+}
+
+.card-spread__category > span:first-child {
+    font-size: clamp(18px, 2rem, 2.1rem);
     font-weight: 600;
 }
 
-@media (max-width: 760px) {
+.card-spread__category:hover,
+.card-spread__category.is-active {
+    color: #292929;
+}
+
+.card-spread__category.is-active {
+    box-shadow: -1px 0 #5f5a53;
+}
+
+.card-spread__description {
+    max-width: 36rem;
+    color: #6d6a66;
+    font-weight: 400;
+    line-height: 1.65;
+}
+
+@keyframes card-spread-image-rise {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 900px) {
     .card-spread {
-        padding: 5.2rem 1.6rem 3rem;
+        padding: 4rem 2.4rem;
     }
 
-    .card-spread__heading h2 {
-        font-size: 3.4rem;
+    .card-spread__layout {
+        grid-template-columns: minmax(0, 1.4fr) minmax(24rem, 0.9fr);
+        gap: 3rem;
     }
 
-    .card-spread__stage {
-        height: 48rem;
-        margin-top: 1.4rem;
+    .card-spread__image {
+        min-height: 38rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .card-spread {
+        padding: 3rem 1.6rem;
     }
 
-    .card-spread__card {
-        bottom: 16rem;
-        width: clamp(13rem, 34vw, 17rem);
-        height: 25rem;
-        border-radius: 0.6rem;
+    .card-spread__layout {
+        grid-template-columns: 1fr;
+        gap: 2.4rem;
     }
 
-    .card-spread__card.is-active {
-        transform: translateX(-50%) rotate(0deg) scale(2);
+    .card-spread__image {
+        min-height: 0;
+        aspect-ratio: 1 / 0.78;
     }
 
-    .card-spread__caption {
-        padding: 0.9rem 1rem 1rem;
+    .card-spread__content {
+        max-width: none;
+        padding: 0;
     }
 
-    .card-spread__caption h3 {
-        font-size: 1.1rem;
+    .card-spread__content h2 {
+        max-width: 40rem;
+        margin-bottom: 2rem;
+        font-size: 3.2rem;
     }
 
-    .card-spread__caption p {
-        font-size: 1.2rem;
+    .card-spread__category {
+        min-height: 3.6rem;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .card-spread__card,
-    .card-spread__image-wrap img {
-        transition: none;
+    .card-spread__image img {
+        animation: none;
     }
 }

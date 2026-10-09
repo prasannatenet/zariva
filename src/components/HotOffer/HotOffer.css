@@ -1,0 +1,120 @@
+.hot-offer {
+    display: flex;
+    min-height: 20rem;
+    width: var(--container-width);
+    align-items: center;
+    justify-content: space-between;
+    gap: 3rem;
+    margin: 5rem auto;
+    padding: 3.2rem clamp(2.4rem, 5vw, 6rem);
+    background: #f1edea url("../../assets/images/ad-image.png") no-repeat right;
+}
+
+.hot-offer__copy {
+    min-width: 0;
+}
+
+.hot-offer__eyebrow {
+    color: black;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+}
+
+.hot-offer__copy h2 {
+    margin: 0.4rem 0 0;
+    color: var(--s-400);
+    font-family: var(--primary-font);
+    font-size: clamp(3.2rem, 4vw, 5rem);
+    font-weight: 500;
+    line-height: 1.1;
+}
+
+.hot-offer__copy h3 {
+    margin: 1rem 0 0;
+    color: var(--s-700);
+    font-size: clamp(1.7rem, 2vw, 2.2rem);
+    font-weight: 500;
+}
+
+.hot-offer__copy p {
+    margin: 0.6rem 0 0;
+    color: var(--s-500);
+    font-size: 1.4rem;
+}
+
+.hot-offer__cta {
+    margin-top: 1.8rem;
+}
+
+.hot-offer__timer-wrap {
+display: grid;
+    flex: 0 0 auto;
+    gap: 0.8rem;
+    padding-top: 11px;
+    border-top: dashed 1px var(--s-200);
+    margin-top: 14px;
+}
+
+.hot-offer__timer-label {
+    color: var(--s-500);
+    font-size: 1.4rem;
+    letter-spacing: 0.04em;
+}
+
+.hot-offer__timer,
+.hot-offer__timer-units {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(5.5rem, 7rem));
+    gap: 0.8rem;
+    text-align: center;
+}
+
+.hot-offer__time-part {
+display: grid;
+    place-items: center;
+    border: 1px solid rgb(193 176 148 / 95%);
+    background: #fff;
+    color: black;
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+}
+
+.hot-offer__timer-units {
+    color: var(--s-700);
+    font-size: 12px;
+}
+
+@media (max-width: 640px) {
+    .hot-offer {
+        width: calc(100% - 3.2rem);
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 2.4rem;
+        margin: 3.5rem auto;
+        padding: 2.4rem 2rem;
+    }
+
+    .hot-offer__timer-wrap {
+        width: 100%;
+        justify-items: start;
+    }
+
+    .hot-offer__timer,
+    .hot-offer__timer-units {
+        width: 100%;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .hot-offer__timer-units {
+        justify-items: center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hot-offer__time-part {
+        font-variant-numeric: tabular-nums;
+    }
+}
