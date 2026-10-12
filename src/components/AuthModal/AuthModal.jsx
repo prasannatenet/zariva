@@ -110,18 +110,18 @@ function AuthModal({ mode }) {
                     </svg>
                 </button>
 
-                <aside className="auth-artwork" aria-label="Zariva fine jewellery">
+                <aside className="auth-artwork" aria-label="Vashu Jewels & Crafts fine jewellery">
                     <div className="auth-artwork-copy">
                         <span className="auth-eyebrow">MADE TO BE YOURS</span>
                         <p>For the moments<br />that become yours.</p>
                         <span className="auth-artwork-rule" />
                     </div>
-                    <span className="auth-artwork-caption">THE ZARIVA COLLECTION</span>
+                    <span className="auth-artwork-caption">VASHU JEWELS &amp; CRAFTS</span>
                 </aside>
 
                 <div className="auth-content">
                     <div className="auth-brand">
-                        <img src={logo} alt="Zariva" />
+                        <img src={logo} alt="Vashu Jewels & Crafts" />
                     </div>
 
                     <div className="auth-heading">
@@ -129,7 +129,7 @@ function AuthModal({ mode }) {
                             {isRegister ? "A LITTLE MORE YOU" : "WELCOME BACK"}
                         </span>
                         <h1 id="auth-title">
-                            {isRegister ? "Create your account" : "Sign in to Zariva"}
+                            {isRegister ? "Create your account" : "Sign in to Vashu Jewels & Crafts"}
                         </h1>
                         <p>
                             {isRegister
@@ -233,7 +233,7 @@ function AuthModal({ mode }) {
                     </form>
 
                     <p className="auth-switch">
-                        {isRegister ? "Already have an account?" : "New to Zariva?"}
+                        {isRegister ? "Already have an account?" : "New to Vashu Jewels & Crafts?"}
                         <button type="button" onClick={switchMode}>
                             {isRegister ? "Sign in" : "Create an account"}
                         </button>

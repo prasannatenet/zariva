@@ -42,6 +42,14 @@ export const productApi = createApi({
         getCombos: builder.query({
             query: () => "/combos",
         }),
+
+        getCoupons: builder.query({
+            query: () => "/coupons",
+        }),
+
+        getSettings: builder.query({
+            query: () => "/settings",
+        }),
     }),
 });
 
@@ -52,4 +60,6 @@ export const {
     useGetCategoryProductsQuery,
     useGetSearchQuery,
     useGetCombosQuery,
+    useGetCouponsQuery,
+    useGetSettingsQuery,
 } = productApi;

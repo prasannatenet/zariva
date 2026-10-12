@@ -33,14 +33,92 @@
   transform: translateX(100%);
 }
 
-.product-card__image-wrapper:hover .product-card__image--primary,
-.product-card__image-wrapper:focus-within .product-card__image--primary {
+.product-card__image-wrapper:not(.product-card__image-wrapper--swiper):hover .product-card__image--primary,
+.product-card__image-wrapper:not(.product-card__image-wrapper--swiper):focus-within .product-card__image--primary {
   transform: translateX(-100%);
 }
 
-.product-card__image-wrapper:hover .product-card__image--secondary,
-.product-card__image-wrapper:focus-within .product-card__image--secondary {
+.product-card__image-wrapper:not(.product-card__image-wrapper--swiper):hover .product-card__image--secondary,
+.product-card__image-wrapper:not(.product-card__image-wrapper--swiper):focus-within .product-card__image--secondary {
   transform: translateX(0);
+}
+
+.product-card__image-carousel,
+.product-card__image-track {
+  width: 100%;
+  height: 100%;
+}
+
+.product-card__image-carousel {
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.product-card__image-track {
+  display: flex;
+  transition: transform 350ms ease;
+}
+
+.product-card__image-wrapper--swiper .product-card__image {
+  position: relative;
+  inset: auto;
+  flex: 0 0 100%;
+  transform: none;
+  transition: none;
+}
+
+.product-card__image-hover-zone {
+  position: absolute;
+  inset-block: 0;
+  z-index: 4;
+  width: 50%;
+  pointer-events: none;
+}
+
+.product-card__image-hover-zone--prev {
+  left: 0;
+}
+
+.product-card__image-hover-zone--next {
+  right: 0;
+}
+
+.product-card__image-pagination {
+  position: absolute;
+  right: 0;
+  bottom: 10px;
+  left: 0;
+  z-index: 6;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.product-card__image-dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  opacity: 0.65;
+}
+
+.product-card__image-dot.is-active {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .product-card__image-hover-zone {
+    pointer-events: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card__image-track {
+    transition: none;
+  }
 }
 
 

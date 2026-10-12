@@ -178,7 +178,7 @@ function HeaderActions() {
                                 <>
                                     Hello, <span className="userName">{user.name}</span>
                                 </>
-                            ) : "Your Zariva account"}
+                            ) : "Your Vashu Jewels & Crafts account"}
                         </span>
                         <Link
                             className="account-dropdown__item"

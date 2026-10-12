@@ -15,7 +15,7 @@ function Account() {
     const location = useLocation();
     const navigate = useNavigate();
     const firstName = user?.name?.trim().split(/\s+/)[0] || "there";
-    const initials = (user?.name || "Z")
+    const initials = (user?.name || "V")
         .trim()
         .split(/\s+/)
         .slice(0, 2)
@@ -64,7 +64,7 @@ function Account() {
                 </Link>
                 <div className="account-wishlist-item__copy">
                     <Link to={product.slug ? `/product/${product.slug}` : "/"}>
-                        {product.name || "A Zariva favourite"}
+                        {product.name || "A Vashu Jewels & Crafts favourite"}
                     </Link>
                     {product.price != null && (
                         <span>₹{Number(product.price).toLocaleString("en-IN")}</span>
@@ -96,7 +96,7 @@ function Account() {
                         <div className="account-identity">
                             <span className="account-avatar" aria-hidden="true">{initials}</span>
                             <div>
-                                <span className="account-identity__eyebrow">YOUR ZARIVA</span>
+                                <span className="account-identity__eyebrow">VASHU JEWELS &amp; CRAFTS</span>
                                 <strong>{user?.name || "Welcome"}</strong>
                                 <span className="account-identity__email">
                                     {user?.email || "Sign in to access your profile"}
@@ -149,7 +149,7 @@ function Account() {
                             <p>{activeView === "overview"
                                 ? isAuthenticated
                                     ? `Welcome back, ${firstName}. Your favourite things, all in one place.`
-                                    : "Sign in to see your profile and Zariva Coins. Your wishlist is ready whenever you are."
+                                    : "Sign in to see your profile and Vashu Jewels & Crafts Coins. Your wishlist is ready whenever you are."
                                 : activeView === "details"
                                     ? "Your profile information, just as you left it."
                                     : "A shortlist of the pieces you love."}</p>
@@ -157,10 +157,10 @@ function Account() {
 
                         {activeView === "overview" && (
                             <>
-                                <section className="account-rewards" aria-label="Zariva Coins balance">
+                                <section className="account-rewards" aria-label="Vashu Jewels & Crafts Coins balance">
                                     <div className="account-rewards__copy">
                                         <span className="account-kicker">A LITTLE SOMETHING EXTRA</span>
-                                        <h2>Your Zariva Coins</h2>
+                                        <h2>Your Vashu Jewels &amp; Crafts Coins</h2>
                                         <p>Your balance, ready for your next visit.</p>
                                     </div>
                                     <div className="account-rewards__balance">
@@ -170,7 +170,7 @@ function Account() {
                                             : "—"}</strong>
                                         <span>coins</span>
                                     </div>
-                                    <span className="account-rewards__watermark" aria-hidden="true">Z</span>
+                                    <span className="account-rewards__watermark" aria-hidden="true">V</span>
                                 </section>
 
                                 <div className="account-stats" aria-label="Account summary">

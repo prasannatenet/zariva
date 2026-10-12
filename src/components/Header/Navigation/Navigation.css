@@ -1,7 +1,7 @@
 .header-nav-wrapper {
     width: 100%;
     background: var(--p-800);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid #f9f9f9;
 }
 
 .header-nav  > ul {

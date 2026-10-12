@@ -16,7 +16,7 @@
 .checkout-page__eyebrow {
     margin: 0 0 0.8rem;
     color: var(--p-700);
-    font-size: 1.1rem;
+    font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.12em;
 }
@@ -74,7 +74,7 @@
     min-width: 0;
     gap: 0.6rem;
     color: #353535;
-    font-size: 1.2rem;
+    font-size: 15px;
     font-weight: 500;
 }
 
@@ -122,6 +122,153 @@
     border-bottom: 1px solid #e6e2dd;
 }
 
+.checkout-page__coupons {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1.8rem;
+    padding-bottom: 1.6rem;
+    border-bottom: 1px solid #e6e2dd;
+}
+
+.checkout-page__coupons h3 {
+    margin: 0;
+    color: var(--p-900);
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.checkout-page__coupons form {
+    display: flex;
+    gap: 0.8rem;
+}
+
+.checkout-page__coupons form input {
+    width: 100%;
+    min-width: 0;
+    min-height: 4.2rem;
+    padding: 0.8rem 1rem;
+    border: 1px solid #d8d4ce;
+    color: var(--text-color);
+    font: inherit;
+    font-size: 15px;
+}
+
+.checkout-page__coupons form input:focus {
+    border-color: var(--p-700);
+    outline: 2px solid rgba(82, 90, 121, 0.15);
+}
+
+.checkout-page__coupons form > button {
+    flex: 0 0 auto;
+    min-width: 7rem;
+    padding: 0 1.2rem;
+    border: 0;
+    background: var(--p-800);
+    color: #fff;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.checkout-page__coupons form > button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.checkout-page__coupon-feedback,
+.checkout-page__coupon-list > p {
+    margin: 0;
+    color: #666;
+    font-size: 15px;
+}
+
+.checkout-page__coupon-feedback.is-success {
+    color: #286d38;
+}
+
+.checkout-page__coupon-feedback.is-error {
+    color: #a32c2c;
+}
+
+.checkout-page__coupon-list {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.checkout-page__coupon-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.2rem 2rem;
+    border: 1px dashed #668574;
+    background: #00800014;
+}
+
+.checkout-page__coupon-card::before,
+.checkout-page__coupon-card::after {
+    position: absolute;
+    top: 40%;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: #fff;
+    content: "";
+}
+
+.checkout-page__coupon-card::before {
+    left: -1.2rem;
+}
+
+.checkout-page__coupon-card::after {
+    right: -1.2rem;
+}
+
+.checkout-page__coupon-card.is-unavailable {
+    opacity: 0.65;
+}
+
+.checkout-page__coupon-card > div {
+    display: grid;
+    min-width: 0;
+    gap: 0.35rem;
+}
+
+.checkout-page__coupon-card strong {
+    color: #426c42;
+}
+
+.checkout-page__coupon-card span {
+    color: #777;
+    font-size: 14px;
+}
+
+.checkout-page__coupon-card button {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid #426c42;
+    background: #fff;
+    color: #426c42;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.checkout-page__coupon-card button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.checkout-page__coupon-card button .material-symbols-outlined {
+    font-size: 1.4rem;
+}
+
 .checkout-page__items {
     display: grid;
     gap: 1.4rem;
@@ -155,7 +302,7 @@
 .checkout-page__item h3 {
     overflow: hidden;
     margin: 0 0 0.4rem;
-    font-size: 1.2rem;
+    font-size: 15px;
     font-weight: 500;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -164,11 +311,11 @@
 .checkout-page__item p {
     margin: 0;
     color: #777;
-    font-size: 1.1rem;
+    font-size: 13px;
 }
 
 .checkout-page__item > strong {
-    font-size: 1.2rem;
+    font-size: 15px;
     white-space: nowrap;
 }
 
@@ -180,7 +327,6 @@
     margin-top: 2rem;
     padding-top: 1.6rem;
     border-top: 1px solid #e6e2dd;
-    font-size: 1.4rem;
 }
 
 .checkout-page__total strong {
@@ -197,6 +343,8 @@
     margin-top: 1.2rem;
     font-size: 1.3rem;
 }
+
+.checkout-page__payable > span { font-size: 20px;}
 
 .checkout-page__discount {
     color: var(--p-800, #0f3d32);
@@ -216,7 +364,7 @@
 .checkout-page__shipping-note {
     margin: 1.2rem 0 0;
     color: #777;
-    font-size: 1.1rem;
+    font-size: 15px;
 }
 
 .checkout-page__unavailable {
@@ -225,7 +373,7 @@
     border-left: 3px solid var(--s-200);
     background: #f7f4ee;
     color: #61594d;
-    font-size: 1.2rem;
+    font-size: 15px;
 }
 
 .checkout-page__submit {
@@ -268,7 +416,7 @@
     padding: 0 1.8rem;
     background: var(--p-800);
     color: #fff;
-    font-size: 1.2rem;
+    font-size: 15px;
     text-decoration: none;
 }
 

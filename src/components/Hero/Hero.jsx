@@ -39,9 +39,8 @@ function Hero() {
             <Swiper
                 modules={[Autoplay]}
                 className="hero__swiper"
-                slidesPerView={1.24}
-                spaceBetween="1%"
-                centeredSlides
+                slidesPerView={1}
+                spaceBetween={0}
                 loop
                 speed={800}
                 autoplay={{

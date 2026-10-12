@@ -90,7 +90,7 @@ function Footer() {
             <div className="site-footer__bottom">
                 <div className="site-footer__bottom-inner">
                     <div>
-                        <p>© 2026, Zariva India. All Rights Reserved.</p>
+                        <p>© 2026, Vashu Jewels &amp; Crafts. All Rights Reserved.</p>
                         <p>Official registered corporate entity: CIN JIEHHG4536GF89R • Bandra West, Mumbai</p>
                     </div>
                     <div className="site-footer__socials" aria-label="Social links">

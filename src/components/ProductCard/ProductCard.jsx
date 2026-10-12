@@ -11,9 +11,13 @@ import { toggleWishlistItem } from "../../store/slices/wishlistSlice";
 import "./ProductCard.css";
 
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, imageMode = "hover" }) => {
     const toastTimeoutRef = useRef(null);
+    const imageHoverIntervalRef = useRef(null);
+    const imageTouchStartXRef = useRef(null);
+    const activeImageIndexRef = useRef(0);
     const [toast, setToast] = useState(null);
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
@@ -23,8 +27,75 @@ const ProductCard = ({ product }) => {
     ));
     const primaryImage = product.primary_image || product.images?.[0];
     const secondaryImage = product.images?.find((image) => image !== primaryImage);
+    const productImages = [...new Set([primaryImage, ...(product.images || [])].filter(Boolean))];
 
-    useEffect(() => () => window.clearTimeout(toastTimeoutRef.current), []);
+    useEffect(() => () => {
+        window.clearTimeout(toastTimeoutRef.current);
+        window.clearInterval(imageHoverIntervalRef.current);
+    }, []);
+
+    const stopImageHover = () => {
+        window.clearInterval(imageHoverIntervalRef.current);
+        imageHoverIntervalRef.current = null;
+    };
+
+    const handleImageHover = (direction) => {
+        const offset = direction === "prev" ? -1 : 1;
+        const nextIndex = activeImageIndexRef.current + offset;
+
+        if (nextIndex < 0 || nextIndex >= productImages.length) {
+            stopImageHover();
+            return false;
+        }
+
+        activeImageIndexRef.current = nextIndex;
+        setActiveImageIndex(nextIndex);
+        return true;
+    };
+
+    const startImageHover = (direction) => {
+        stopImageHover();
+        if (!handleImageHover(direction)) {
+            return;
+        }
+
+        imageHoverIntervalRef.current = window.setInterval(
+            () => handleImageHover(direction),
+            1100
+        );
+    };
+
+    const resetImageHover = () => {
+        stopImageHover();
+        activeImageIndexRef.current = 0;
+        setActiveImageIndex(0);
+    };
+
+    const handleImageZoneLeave = (event) => {
+        if (event.relatedTarget?.classList?.contains("product-card__image-hover-zone")) {
+            stopImageHover();
+            return;
+        }
+
+        resetImageHover();
+    };
+
+    const handleImageTouchEnd = (event) => {
+        const touchStartX = imageTouchStartXRef.current;
+        imageTouchStartXRef.current = null;
+
+        if (touchStartX === null) {
+            return;
+        }
+
+        const touchDistance = event.changedTouches[0].clientX - touchStartX;
+
+        if (Math.abs(touchDistance) > 30) {
+            event.preventDefault();
+            event.stopPropagation();
+            handleImageHover(touchDistance > 0 ? "prev" : "next");
+        }
+    };
 
     const showToast = (nextToast) => {
         window.clearTimeout(toastTimeoutRef.current);
@@ -76,8 +147,9 @@ const ProductCard = ({ product }) => {
         <>
         <article className="product-card">
             <div
-                className="product-card__image-wrapper"
+                className={`product-card__image-wrapper${imageMode === "swiper" ? " product-card__image-wrapper--swiper" : ""}`}
                 onClick={() => navigate(`/product/${product.slug}`)}
+                onMouseLeave={imageMode === "swiper" ? resetImageHover : undefined}
                 onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
@@ -93,20 +165,81 @@ const ProductCard = ({ product }) => {
                         {Math.round(product.discount_percentage)}% OFF
                     </span>
                 )}
-                {primaryImage && (
-                    <img
-                        src={primaryImage}
-                        alt={product.name}
-                        className="product-card__image product-card__image--primary"
-                    />
-                )}
-                {secondaryImage && (
-                    <img
-                        src={secondaryImage}
-                        alt={`${product.name} alternate view`}
-                        className="product-card__image product-card__image--secondary"
-                        aria-hidden="true"
-                    />
+                {imageMode === "swiper" ? (
+                    <>
+                        <div
+                            className="product-card__image-carousel"
+                            onTouchStart={(event) => {
+                                imageTouchStartXRef.current = event.touches[0].clientX;
+                            }}
+                            onTouchEnd={handleImageTouchEnd}
+                        >
+                            <div
+                                className="product-card__image-track"
+                                style={{ transform: `translateX(-${activeImageIndex * 100}%)` }}
+                            >
+                                {productImages.map((image, index) => (
+                                    <img
+                                        key={image}
+                                        src={image}
+                                        alt={index === 0 ? product.name : `${product.name} view ${index + 1}`}
+                                        className="product-card__image"
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        {productImages.length > 1 && (
+                            <>
+                                <span
+                                    className="product-card__image-hover-zone product-card__image-hover-zone--prev"
+                                    aria-hidden="true"
+                                    onMouseEnter={() => startImageHover("prev")}
+                                    onMouseLeave={handleImageZoneLeave}
+                                />
+                                <span
+                                    className="product-card__image-hover-zone product-card__image-hover-zone--next"
+                                    aria-hidden="true"
+                                    onMouseEnter={() => startImageHover("next")}
+                                    onMouseLeave={handleImageZoneLeave}
+                                />
+                                <div className="product-card__image-pagination">
+                                    {productImages.map((image, index) => (
+                                        <button
+                                            key={image}
+                                            type="button"
+                                            className={`product-card__image-dot${index === activeImageIndex ? " is-active" : ""}`}
+                                            aria-label={`Show image ${index + 1} of ${product.name}`}
+                                            aria-current={index === activeImageIndex ? "true" : undefined}
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                activeImageIndexRef.current = index;
+                                                setActiveImageIndex(index);
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        {primaryImage && (
+                            <img
+                                src={primaryImage}
+                                alt={product.name}
+                                className="product-card__image product-card__image--primary"
+                            />
+                        )}
+                        {secondaryImage && (
+                            <img
+                                src={secondaryImage}
+                                alt={`${product.name} alternate view`}
+                                className="product-card__image product-card__image--secondary"
+                                aria-hidden="true"
+                            />
+                        )}
+                    </>
                 )}
 
                 {/* WISHLIST */}

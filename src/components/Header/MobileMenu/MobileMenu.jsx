@@ -49,7 +49,7 @@ function MobileMenu({ isOpen, onClose, categories }) {
 
                 <div className="mobile-menu__header">
                     <a href="/" className="mobile-menu__logo">
-                        ZARIVA
+                        VASHU JEWELS &amp; CRAFTS
                     </a>
 
                     <button

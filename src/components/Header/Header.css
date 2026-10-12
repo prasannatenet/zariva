@@ -1,6 +1,8 @@
 .site-header { width: 100%; background: var(--bg-white); color: var(--text-color); box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px; position: relative;}
 
-.header-main { min-height: 8rem; display: flex; align-items: center; gap: 2rem; border-bottom: 1px solid var(--border-color); justify-content: space-between; background: var(--bg-white); position: relative;}
+.site-header.is-fixed { position: fixed; top: 0; right: 0; left: 0; z-index: 1000; background: #fffffff7; backdrop-filter: blur(1px);}
+
+.header-main { min-height: 8rem; display: flex; align-items: center; gap: 2rem; border-bottom: 1px solid var(--border-color); justify-content: space-between; position: relative;}
 
 .header-logo-search { display: flex; align-items: center; gap: 5rem; flex: 1 0 0; min-width: 0;}
 

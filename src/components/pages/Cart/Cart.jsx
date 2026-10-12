@@ -59,7 +59,6 @@ function Cart() {
         (total, item) => total + Number(item.quantity ?? item.qty ?? 1),
         0
     ));
-
     const handleQuantityChange = async (item, quantity) => {
         const cartItemId = item.cart_item_id ?? item.id;
         if (cartItemId == null) return;
@@ -100,7 +99,7 @@ function Cart() {
         <section className="cart-page">
             <div className="cart-page__container">
                 <header className="cart-page__heading">
-                    <p className="cart-page__eyebrow">ZARIVA / YOUR BAG</p>
+                    <p className="cart-page__eyebrow">VASHU JEWELS &amp; CRAFTS / YOUR BAG</p>
                     <h1>Your cart</h1>
                     {!isLoading && !isError && !requiresLogin && (
                         <p>{totalQuantity} {totalQuantity === 1 ? "piece" : "pieces"} in your cart</p>
@@ -243,11 +242,6 @@ function Cart() {
 
                         <aside className="cart-summary" aria-labelledby="cart-summary-title">
                             <h2 id="cart-summary-title">Order summary</h2>
-                            <div className="cart-summary__coupon">
-                                <p>Coupon code</p>
-                                <span>Coupon discounts will appear here when the API supports validation.</span>
-                            </div>
-
                             <div className="cart-summary__row">
                                 <span>Subtotal</span>
                                 <strong>₹{formatPrice(subtotal)}</strong>

@@ -98,6 +98,15 @@ export const authApi = createApi({
             invalidatesTags: ["Cart"],
         }),
 
+        applyCoupon: builder.mutation({
+            query: (couponCode) => ({
+                url: "/checkout/apply-coupon",
+                method: "POST",
+                body: { coupon_code: couponCode },
+            }),
+            invalidatesTags: ["Cart"],
+        }),
+
         getCart: builder.query({
             query: () => "/cart",
             providesTags: ["Cart"],
@@ -118,7 +127,7 @@ export const {
     useAddToCartMutation,
     useUpdateCartItemMutation,
     useRemoveCartItemMutation,
+    useApplyCouponMutation,
     useGetCartQuery,
     useGetMeQuery,
 } = authApi;
-

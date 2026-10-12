@@ -1,27 +1,48 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useGetCombosQuery, useGetProductQuery } from "../../../store/api/productApi";
-import { useAddToCartMutation } from "../../../store/api/authApi";
+import { useDispatch, useSelector } from "react-redux";
+import { useGetCombosQuery, useGetCouponsQuery, useGetProductQuery, useGetSettingsQuery } from "../../../store/api/productApi";
+import { useAddToCartMutation, useGetCartQuery } from "../../../store/api/authApi";
+import { toggleWishlistItem } from "../../../store/slices/wishlistSlice";
 import "./ProductDetail.css";
 import Button from "../../../components/Button/Button";
 import ProductReviews from "./ProductReviews";
 
 import safeCheckoutImg from "../../../assets/images/safe-checkout.png"
+import paymentOption from "../../../assets/images/paymentOption.png"
+import fire from "../../../assets/images/fire.gif"
+
+const LOW_STOCK_THRESHOLD = 9;
 
 function ProductDetail() {
     const { slug } = useParams();
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const wishlist = useSelector((state) => state.wishlist);
+    const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
     const { data, isLoading, isError } = useGetProductQuery(slug);
     const { data: combosData } = useGetCombosQuery();
+    const { data: couponsData, isLoading: areCouponsLoading, isError: areCouponsError } = useGetCouponsQuery();
+    const { data: settingsData, isLoading: areSettingsLoading, isError: areSettingsError } = useGetSettingsQuery();
+    const {
+        data: cartData,
+        isLoading: isCartLoading,
+        isError: isCartError,
+    } = useGetCartQuery(undefined, { skip: !isAuthenticated });
     const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
-    const [expandedImageSlug, setExpandedImageSlug] = useState(null);
     const [variationSelection, setVariationSelection] = useState({ slug, index: 0 });
     const selectedVariationIndex = variationSelection.slug === slug ? variationSelection.index : 0;
+    const [gallerySelection, setGallerySelection] = useState({ slug, variationIndex: 0, index: 0 });
+    const thumbnailRailRef = useRef(null);
     const [zoomPreview, setZoomPreview] = useState(null);
     const [quantity, setQuantity] = useState(1);
     const [selectedColor, setSelectedColor] = useState("");
     const [selectedSize, setSelectedSize] = useState("");
     const [cartFeedback, setCartFeedback] = useState(null);
+    const [shareFeedback, setShareFeedback] = useState("");
+    const [couponFeedback, setCouponFeedback] = useState("");
+    const [deliveryPincode, setDeliveryPincode] = useState("");
+    const [pincodeFeedback, setPincodeFeedback] = useState("");
 
     if (isLoading) {
         return <div className="product-detail__message">Loading product...</div>;
@@ -38,6 +59,9 @@ function ProductDetail() {
         return <div className="product-detail__message">Product not found.</div>;
     }
 
+    const isWishlisted = wishlist.some(
+        (item) => String(item.id ?? item.slug) === String(product.id ?? product.slug)
+    );
     const variations = Array.isArray(product.variations) ? product.variations : [];
     const selectedVariation = variations[selectedVariationIndex] ?? variations[0] ?? null;
     const displayedProduct = selectedVariation ?? product;
@@ -56,18 +80,72 @@ function ProductDetail() {
     const images = productImages
         .map((image) => typeof image === "string" ? image : image?.url ?? image?.src)
         .filter(Boolean);
-    const visibleImages = expandedImageSlug === slug ? images : images.slice(0, 4);
+    const selectedImageIndex = gallerySelection.slug === slug
+        && gallerySelection.variationIndex === selectedVariationIndex
+        ? Math.min(gallerySelection.index, Math.max(images.length - 1, 0))
+        : 0;
+    const selectedImage = images[selectedImageIndex];
     const colors = Array.isArray(product.colors) ? product.colors : [];
     const sizes = Array.isArray(product.sizes) ? product.sizes : [];
     const rating = Number(reviews.summary?.average ?? product.rating) || 0;
     const reviewCount = Number(reviews.summary?.count ?? product.reviews_count ?? product.review_count ?? 0);
     const price = Number(displayedProduct.price ?? product.price);
-    const regularPrice = Number(displayedProduct.regular_price ?? product.regular_price);
+    const regularPrice = Number(
+        displayedProduct.regular_price
+        ?? product.regular_price
+        ?? displayedProduct.base_price
+        ?? product.base_price
+    );
     const discount = regularPrice > price ? Math.round(((regularPrice - price) / regularPrice) * 100) : 0;
+    const stockValue = displayedProduct.stock
+        ?? displayedProduct.stock_quantity
+        ?? displayedProduct.available_quantity
+        ?? displayedProduct.available_stock
+        ?? product.stock
+        ?? product.stock_quantity
+        ?? product.available_quantity
+        ?? product.available_stock;
+    const stockQuantity = stockValue != null && Number.isFinite(Number(stockValue))
+        ? Math.max(0, Number(stockValue))
+        : null;
     const inStock = displayedProduct.in_stock
-        ?? (displayedProduct.stock_quantity != null
-            ? Number(displayedProduct.stock_quantity) > 0
-            : product.in_stock ?? Number(product.stock_quantity) > 0);
+        ?? product.in_stock
+        ?? (stockQuantity != null ? stockQuantity > 0 : false);
+    const isInventoryTracked = displayedProduct.manage_stock ?? product.manage_stock ?? false;
+    const isLowStock = isInventoryTracked
+        && inStock
+        && stockQuantity !== null
+        && stockQuantity > 0
+        && stockQuantity <= LOW_STOCK_THRESHOLD;
+    const stockLabel = !inStock || (isInventoryTracked && stockQuantity === 0)
+        ? "Out of stock"
+        : stockQuantity > 15
+            ? "In Stock"
+            : stockQuantity !== null
+                ? `${stockQuantity} Available`
+                : "Available";
+    const freeShippingMinimum = Number(
+        settingsData?.data?.free_shipping_minimum
+        ?? settingsData?.data?.settings?.free_shipping_minimum
+    );
+    const cart = cartData?.data?.cart ?? cartData?.data ?? cartData;
+    const cartSubtotal = Number(cartData?.meta?.subtotal ?? cart?.meta?.subtotal ?? cart?.subtotal ?? 0);
+    const hasFreeShippingMinimum = Number.isFinite(freeShippingMinimum) && freeShippingMinimum >= 0;
+    const shippingProgress = hasFreeShippingMinimum && Number.isFinite(cartSubtotal)
+        ? freeShippingMinimum === 0 ? 100 : Math.min((cartSubtotal / freeShippingMinimum) * 100, 100)
+        : 0;
+    const amountToFreeShipping = hasFreeShippingMinimum && Number.isFinite(cartSubtotal)
+        ? Math.max(freeShippingMinimum - cartSubtotal, 0)
+        : 0;
+    const coupons = Array.isArray(couponsData?.data) ? couponsData.data : [];
+    const shippingDateFormatter = new Intl.DateTimeFormat("en-IN", {
+        day: "numeric",
+        month: "short",
+    });
+    const shipsFrom = new Date();
+    shipsFrom.setDate(shipsFrom.getDate() + 1);
+    const shipsUntil = new Date();
+    shipsUntil.setDate(shipsUntil.getDate() + 3);
     const matchingCombos = (combosData?.data || []).filter((combo) =>
         combo.is_live && combo.products?.some((item) => item.id === product.id)
     );
@@ -125,6 +203,59 @@ function ProductDetail() {
         setZoomPreview({ src: event.currentTarget.dataset.image, x, y });
     };
 
+    const scrollThumbnails = (direction) => {
+        thumbnailRailRef.current?.scrollBy({
+            top: direction * 100,
+            behavior: "smooth",
+        });
+    };
+
+    const handleShare = async () => {
+        const shareData = {
+            title: product.name,
+            url: window.location.href,
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+                setShareFeedback("");
+                return;
+            }
+
+            await navigator.clipboard.writeText(shareData.url);
+            setShareFeedback("Link copied");
+        } catch (error) {
+            if (error.name !== "AbortError") {
+                setShareFeedback("Could not share product");
+            }
+        }
+    };
+
+    const handleCopyCoupon = async (code) => {
+        if (!navigator.clipboard?.writeText) {
+            setCouponFeedback("Copy is not supported in this browser.");
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(code);
+            setCouponFeedback(`${code} copied`);
+        } catch {
+            setCouponFeedback("Could not copy coupon code.");
+        }
+    };
+
+    const handlePincodeCheck = (event) => {
+        event.preventDefault();
+        if (!/^\d{6}$/.test(deliveryPincode)) {
+            setPincodeFeedback("Enter a valid 6-digit pincode.");
+            return;
+        }
+
+        setPincodeFeedback("Pincode noted. Delivery availability will be confirmed at checkout.");
+    };
+
     const handleAddItemsToCart = async (items, source) => {
         setCartFeedback(null);
         let addedCount = 0;
@@ -156,6 +287,14 @@ function ProductDetail() {
                 requiresLogin: error.status === 401,
             });
             return false;
+        }
+    };
+
+    const handleProductBuyNow = async () => {
+        const addedToCart = await handleAddItemsToCart([product], "product");
+
+        if (addedToCart) {
+            navigate("/checkout");
         }
     };
 
@@ -212,19 +351,89 @@ function ProductDetail() {
                 <div className="container">
                     <div className="product-detail__layout">
                         <section className="product-detail__gallery" aria-label="Product images">
-                            {visibleImages.length > 0 ? (
-                                <div className="product-detail__image-grid">
-                                    {visibleImages.map((image, index) => (
-                                        <div
-                                            className="product-detail__image-tile"
-                                            key={`${image}-${index}`}
-                                            data-image={image}
-                                            onMouseMove={handleImageZoom}
-                                            onMouseLeave={() => setZoomPreview(null)}
-                                        >
-                                            <img src={image} alt={`${product.name} view ${index + 1}`} />
+                            {images.length > 0 ? (
+                                <div className={`product-detail__gallery-layout${images.length === 1 ? " is-single" : ""}`}>
+                                    {images.length > 1 && (
+                                        <div className="product-detail__thumbnail-column">
+                                            {images.length > 5 && (
+                                                <button
+                                                    className="product-detail__thumbnail-arrow"
+                                                    type="button"
+                                                    aria-label="Scroll thumbnails up"
+                                                    onClick={() => scrollThumbnails(-1)}
+                                                >
+                                                    <span className="material-symbols-outlined" aria-hidden="true">keyboard_arrow_up</span>
+                                                </button>
+                                            )}
+                                            <div className="product-detail__thumbnail-rail" ref={thumbnailRailRef}>
+                                                {images.map((image, index) => (
+                                                    <button
+                                                        className={`product-detail__thumbnail${index === selectedImageIndex ? " is-selected" : ""}`}
+                                                        key={`${image}-${index}`}
+                                                        type="button"
+                                                        aria-label={`Show image ${index + 1} of ${product.name}`}
+                                                        aria-pressed={index === selectedImageIndex}
+                                                        onClick={() => {
+                                                            setGallerySelection({
+                                                                slug,
+                                                                variationIndex: selectedVariationIndex,
+                                                                index,
+                                                            });
+                                                            setZoomPreview(null);
+                                                        }}
+                                                    >
+                                                        <img src={image} alt="" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            {images.length > 5 && (
+                                                <button
+                                                    className="product-detail__thumbnail-arrow"
+                                                    type="button"
+                                                    aria-label="Scroll thumbnails down"
+                                                    onClick={() => scrollThumbnails(1)}
+                                                >
+                                                    <span className="material-symbols-outlined" aria-hidden="true">keyboard_arrow_down</span>
+                                                </button>
+                                            )}
                                         </div>
-                                    ))}
+                                    )}
+                                    <div
+                                        className="product-detail__main-image"
+                                        data-image={selectedImage}
+                                        onMouseMove={handleImageZoom}
+                                        onMouseLeave={() => setZoomPreview(null)}
+                                    >
+                                        <img
+                                            src={selectedImage}
+                                            alt={`${product.name} view ${selectedImageIndex + 1}`}
+                                        />
+                                        {discount > 0 && (
+                                            <span className="product-detail__image-discount">
+                                                {discount}% OFF
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="trustBar">
+                                        <div className="trustPanel">
+                                            <span class="material-symbols-outlined">
+                                                security
+                                            </span>
+                                            <div>100% Authentic</div>
+                                        </div>
+                                        <div className="trustPanel">
+                                            <span class="material-symbols-outlined">
+                                                loyalty
+                                            </span>
+                                            <div>Best Price Guaranteed</div>
+                                        </div>
+                                        <div className="trustPanel">
+                                            <span class="material-symbols-outlined">
+                                                delivery_truck_speed
+                                            </span>
+                                            <div>Quick Shipping</div>
+                                        </div>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="product-detail__image-placeholder">Image unavailable</div>
@@ -238,21 +447,35 @@ function ProductDetail() {
                                     />
                                 </div>
                             )}
-                            {images.length > visibleImages.length && (
-                                <button
-                                    className="product-detail__load-more"
-                                    type="button"
-                                    onClick={() => setExpandedImageSlug(slug)}
-                                >
-                                    Load more images
-                                </button>
-                            )}
                         </section>
 
                         <section className="product-detail__info">
                             {product.sku && <p className="product-detail__sku">SKU: {product.sku}</p>}
-                            <h1>{product.name}</h1>
-
+                            <div className="product-detail__title-row">
+                                <h1>{product.name}</h1>
+                                <button
+                                    className={`product-detail__share product-detail__wishlist${isWishlisted ? " is-active" : ""}`}
+                                    type="button"
+                                    aria-label={`${isWishlisted ? "Remove" : "Add"} ${product.name} ${isWishlisted ? "from" : "to"} wishlist`}
+                                    aria-pressed={isWishlisted}
+                                    onClick={() => dispatch(toggleWishlistItem(product))}
+                                >
+                                    <span className="material-symbols-outlined" aria-hidden="true">favorite</span>
+                                </button>
+                                <button
+                                    className="product-detail__share"
+                                    type="button"
+                                    aria-label={`Share ${product.name}`}
+                                    onClick={handleShare}
+                                >
+                                    <span className="material-symbols-outlined" aria-hidden="true">share</span>
+                                </button>
+                            </div>
+                            {shareFeedback && (
+                                <span className="product-detail__share-feedback" role="status">
+                                    {shareFeedback}
+                                </span>
+                            )}
                             <a className="product-detail__rating" href="#product-reviews" aria-label={`Rated ${rating.toFixed(1)} out of 5, ${reviewCount} reviews`}>
                                 <span className="product-detail__stars" aria-hidden="true">
                                     {[1, 2, 3, 4, 5].map((star) => (
@@ -266,20 +489,140 @@ function ProductDetail() {
                                 <span>{reviewCount} Reviews</span>
                             </a>
 
-                            <p className={`product-detail__stock ${inStock ? "is-in-stock" : "is-out-of-stock"}`}>
-                                {inStock ? "In stock" : "Out of stock"}
-                            </p>
+                            <div className="product-detail__price">
+                                <span className="product-detail__current-price">
+                                    {Number.isFinite(price) ? formatPrice(price) : "Price unavailable"}
+                                </span>
+                                {regularPrice > price && (
+                                    <>
+                                        <del className="product-detail__regular-price">{formatPrice(regularPrice)}</del>
+                                        <span className="product-detail__discount">
+                                            {formatPrice(regularPrice - price)} saved · {discount}% off
+                                        </span>
+                                    </>
+                                )}
+                                {isLowStock ? (
+                                    <div className="product-detail__low-stock" role="status">
+                                        <p><img src={fire} alt="" /> Hurry! Only <strong>{stockQuantity}</strong> left in stock</p>
+                                    </div>
+                                ) : (
+                                    <span className={`product-detail__availability${inStock ? " is-in-stock" : " is-out-of-stock"}`}>
+                                        {stockLabel}
+                                    </span>
+                                )}
+                            </div>
 
-                            <p className="product-detail__price">
-                                ₹{Number.isFinite(price) ? price.toLocaleString("en-IN") : "-"}
-                                {regularPrice > price && <span className="regualrPrice">₹{regularPrice.toLocaleString("en-IN")}</span>}
-                                {discount > 0 && <span className="discountValue">{discount}% OFF</span>}
-                            </p>
+                            <span className="texesInfo">(Incl of all Taxes)</span>
 
-                            <p className="product-detail__delivery">
-                                <span className="material-symbols-outlined">delivery_truck_speed</span>
-                                Delivery in 3-5 business days
-                            </p>
+                            <div className="product-detail__shipping">
+                                <p className="product-detail__shipping-estimate">
+                                    <span className="material-symbols-outlined" aria-hidden="true">local_shipping</span>
+                                    <span>
+                                        Ships between <strong>{shippingDateFormatter.format(shipsFrom)}</strong>
+                                        {" and "}
+                                        <strong>{shippingDateFormatter.format(shipsUntil)}</strong>
+                                    </span>
+                                </p>
+                                <div className="product-detail__shipping-benefits">
+                                    <div className="product-detail__free-shipping">
+                                        {areSettingsLoading ? (
+                                            <p>Loading free-shipping offer...</p>
+                                        ) : areSettingsError || !hasFreeShippingMinimum ? (
+                                            <p role="status">Free-shipping information is currently unavailable.</p>
+                                        ) : isAuthenticated && isCartLoading ? (
+                                            <p>Checking your cart for free shipping...</p>
+                                        ) : isAuthenticated && isCartError ? (
+                                            <p role="status">Unable to check your cart for free shipping.</p>
+                                        ) : !isAuthenticated ? (
+                                            <p>Add items to your cart to track free-shipping progress.</p>
+                                        ) : (
+                                            <>
+                                                <p>
+                                                    {amountToFreeShipping > 0 ? (
+                                                        <>Add <strong>{formatPrice(amountToFreeShipping)}</strong> more to unlock <strong>FREE shipping</strong></>
+                                                    ) : (
+                                                        <>You unlocked <strong>FREE shipping</strong></>
+                                                    )}
+                                                </p>
+                                                <div
+                                                    className="product-detail__shipping-progress"
+                                                    role="progressbar"
+                                                    aria-label="Free shipping progress"
+                                                    aria-valuemin={0}
+                                                    aria-valuemax={freeShippingMinimum}
+                                                    aria-valuenow={Math.min(cartSubtotal, freeShippingMinimum)}
+                                                >
+                                                    <span style={{ width: `${shippingProgress}%` }} />
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                    <form className="product-detail__pincode-check" onSubmit={handlePincodeCheck}>
+                                        <label htmlFor="product-delivery-pincode">Enter your pincode</label>
+                                        <div className="product-detail__pincode-controls">
+                                            <input
+                                                id="product-delivery-pincode"
+                                                type="text"
+                                                inputMode="numeric"
+                                                autoComplete="postal-code"
+                                                maxLength={6}
+                                                placeholder="6-digit pincode"
+                                                value={deliveryPincode}
+                                                onChange={(event) => {
+                                                    setDeliveryPincode(event.target.value.replace(/\D/g, "").slice(0, 6));
+                                                    setPincodeFeedback("");
+                                                }}
+                                            />
+                                            <button type="submit" disabled={deliveryPincode.length !== 6}>Check</button>
+                                        </div>
+                                        {pincodeFeedback && <p className="product-detail__pincode-feedback" role="status">{pincodeFeedback}</p>}
+                                    </form>
+                                </div>
+
+                                <section className="product-detail__coupons" aria-label="Available coupons">
+                                    <h2>Available Coupons</h2>
+                                    {areCouponsLoading ? (
+                                        <p className="product-detail__coupons-message">Loading coupons...</p>
+                                    ) : areCouponsError ? (
+                                        <p className="product-detail__coupons-message is-error" role="alert">
+                                            Coupons are unavailable right now.
+                                        </p>
+                                    ) : coupons.length === 0 ? (
+                                        <p className="product-detail__coupons-message">No coupons are available right now.</p>
+                                    ) : (
+                                        <div className="product-detail__coupon-list">
+                                            {coupons.map((coupon) => (
+                                                <article
+                                                    className={`product-detail__coupon${coupon.is_available ? "" : " is-unavailable"}`}
+                                                    key={coupon.code}
+                                                >
+                                                    <div className="product-detail__coupon-copy">
+                                                        <strong>{coupon.offer_text || "Special offer"}</strong>
+                                                        <span>Min. order {formatPrice(coupon.min_order_amount)}</span>
+                                                        {coupon.validity_text && <span>{coupon.validity_text}</span>}
+                                                        {!coupon.is_available && (
+                                                            <span>{coupon.ineligible_reason || (coupon.is_redeemed ? "Already redeemed" : "Currently unavailable")}</span>
+                                                        )}
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        className="product-detail__coupon-code"
+                                                        onClick={() => handleCopyCoupon(coupon.code)}
+                                                        disabled={!coupon.is_available}
+                                                        aria-label={`Copy coupon ${coupon.code}`}
+                                                    >
+                                                        {coupon.code}
+                                                        {coupon.is_available && (
+                                                            <span className="material-symbols-outlined" aria-hidden="true">content_copy</span>
+                                                        )}
+                                                    </button>
+                                                </article>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {couponFeedback && <p className="product-detail__coupon-feedback" role="status">{couponFeedback}</p>}
+                                </section>
+                            </div>
 
                             {variations.length > 0 && (
                                 <fieldset className="product-detail__options">
@@ -304,18 +647,20 @@ function ProductDetail() {
                                                         ? <img src={variationImage} alt={`${label} variation`} />
                                                         : <span className="product-detail__variation-image-placeholder" aria-hidden="true">Image unavailable</span>}
 
-                                                    <div className="product-detail__variation-material">
-                                                        Material: <span> {getVariationMaterial(variation) ?? "Not specified"}</span>
+                                                    <div>
+                                                        <div className="product-detail__variation-material">
+                                                            Material: <span> {getVariationMaterial(variation) ?? "Not specified"}</span>
+                                                        </div>
+                                                        <span className="product-detail__variation-price">
+                                                            {formatPrice(variationPrice)}
+                                                            {variationRegularPrice > variationPrice && (
+                                                                <del>{formatPrice(variationRegularPrice)}</del>
+                                                            )}
+                                                        </span>
+                                                        <span className={`product-detail__variation-stock ${variationInStock ? "is-in-stock" : "is-out-of-stock"}`}>
+                                                            {variationInStock ? "In stock" : "Out of stock"}
+                                                        </span>
                                                     </div>
-                                                    <span className="product-detail__variation-price">
-                                                        {formatPrice(variationPrice)}
-                                                        {variationRegularPrice > variationPrice && (
-                                                            <del>{formatPrice(variationRegularPrice)}</del>
-                                                        )}
-                                                    </span>
-                                                    <span className={`product-detail__variation-stock ${variationInStock ? "is-in-stock" : "is-out-of-stock"}`}>
-                                                        {variationInStock ? "In stock" : "Out of stock"}
-                                                    </span>
                                                 </button>
                                             );
                                         })}
@@ -365,11 +710,18 @@ function ProductDetail() {
                                     <button type="button" aria-label="Increase quantity" onClick={() => setQuantity((value) => value + 1)}>+</button>
                                 </div>
 
-                                <Button materialIcon="add_shopping_cart" text={isAddingToCart ? "Adding..." : "Add to Cart"} type="button"
+                                <Button materialIcon="shopping_cart" text={isAddingToCart ? "Adding..." : "Add to Cart"} type="button"
                                     disabled={isAddingToCart || !inStock}
                                     onClick={() => handleAddItemsToCart([product], "product")}
                                 >
                                 </Button>
+                                <Button
+                                    materialIcon="shopping_bag"
+                                    text="Buy Now"
+                                    className="common-button--reverse"
+                                    disabled={isAddingToCart || !inStock}
+                                    onClick={handleProductBuyNow}
+                                />
 
                                 {/* <button
                                     type="button"
@@ -382,8 +734,10 @@ function ProductDetail() {
                             </div>
 
                             <div className="safeCheckout-img">
-                                <span>Guarantee safe checkout</span>
                                 <img src={safeCheckoutImg} alt="" />
+                            </div>
+                            <div className="paymentOption">
+                                <img src={paymentOption} alt="" />
                             </div>
                             {renderCartFeedback("product")}
 
@@ -399,6 +753,30 @@ function ProductDetail() {
                                     <p>{getVariationMaterial(displayedProduct)}</p>
                                 </details>
                             )}
+                            <details className="product-detail__description">
+                                <summary>Shipping Policy</summary>
+                                <h5 style={{ marginTop: "0", marginBottom: "10px" }}> Shipping & Delivery</h5>
+
+                                <p> We deliver happiness to your doorstep with convenient shipping options across India and internationally.</p>
+                                <ul style={{ listStyle: "none", paddingLeft: "0", lineHeight: "31px" }}>
+                                    <li><strong> **Free Shipping Across India:** </strong> Enjoy free delivery on all orders above ₹699.</li>
+                                    <li> <strong> * **International Shipping:**</strong> We ship worldwide, with an estimated delivery time of 8–10 days.</li>
+                                    <li><strong>* **International Customs & Duties:**</strong> Any applicable customs duties, taxes, or statutory charges on international orders are the customer's responsibility.</li>
+                                </ul>
+                            </details>
+
+                            <details className="product-detail__description">
+                                <summary>Return Policy</summary>
+                                <h5 style={{ marginTop: "0", marginBottom: "10px" }}> Shipping & Delivery</h5>
+
+                                <p> We deliver happiness to your doorstep with convenient shipping options across India and internationally.</p>
+                                <ul style={{ listStyle: "none", paddingLeft: "0", lineHeight: "31px" }}>
+                                    <li><strong> **Free Shipping Across India:** </strong> Enjoy free delivery on all orders above ₹699.</li>
+                                    <li> <strong> * **International Shipping:**</strong> We ship worldwide, with an estimated delivery time of 8–10 days.</li>
+                                    <li><strong>* **International Customs & Duties:**</strong> Any applicable customs duties, taxes, or statutory charges on international orders are the customer's responsibility.</li>
+                                </ul>
+                            </details>
+
                         </section>
                     </div>
                 </div>
@@ -467,7 +845,7 @@ function ProductDetail() {
                     </section>
                 )}
             </div>
-            
+
             <div className="container">
                 <ProductReviews slug={slug} reviews={reviews} />
             </div>

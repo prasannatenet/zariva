@@ -89,10 +89,11 @@
     text-decoration: none;
 
     font-family: var(--primary-font);
-    font-size: 2.2rem;
+    font-size: 1.6rem;
     font-weight: 600;
 
-    letter-spacing: 0.12em;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
 }
 
 
