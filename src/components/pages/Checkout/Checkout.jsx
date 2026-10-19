@@ -78,7 +78,7 @@ function Checkout() {
     const [couponInput, setCouponInput] = useState("");
     const [couponFeedback, setCouponFeedback] = useState(null);
     const [coins, setCoins] = useState("0");
-    const [paymentMethodChoice, setPaymentMethodChoice] = useState("cod");
+    const [paymentMethodChoice, setPaymentMethodChoice] = useState("razorpay");
     const [address, setAddress] = useState(() => ({
         ...EMPTY_ADDRESS,
         billing_name: user?.name ?? "",
@@ -90,6 +90,8 @@ function Checkout() {
     const [statusLine, setStatusLine] = useState("");
     const [placedOrder, setPlacedOrder] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [pendingPaymentOrder, setPendingPaymentOrder] = useState(null);
+    const [isCheckingPayment, setIsCheckingPayment] = useState(false);
     const checkoutTokenRef = useRef(null);
     const submittingRef = useRef(false);
 
@@ -119,11 +121,13 @@ function Checkout() {
             method: "cod",
             title: "Cash on Delivery",
             description: "Pay when your order arrives",
+            disabledDescription: "Cash on Delivery is not available right now",
         },
         {
             method: "razorpay",
-            title: "Pay Online",
+            title: "Razorpay",
             description: "UPI, credit/debit cards and netbanking",
+            disabledDescription: "Razorpay is not enabled by the store right now",
         },
     ].map((option) => ({
         ...option,
@@ -137,6 +141,9 @@ function Checkout() {
         : enabledPaymentMethods.includes("cod")
             ? "cod"
             : enabledPaymentMethods[0] ?? "cod";
+    const submitLabel = isSubmitting
+        ? "Processing..."
+        : `${paymentMethod === "razorpay" ? "Pay securely with Razorpay" : "Place order"}${pricing?.grand_total == null ? "" : ` · ₹${formatPrice(pricing.grand_total)}`}`;
     const coupons = Array.isArray(couponsData?.data) ? couponsData.data : [];
     const userCoinBalance = Number(summary?.user_coins?.balance ?? 0);
 
@@ -214,9 +221,44 @@ function Checkout() {
         return "processing";
     };
 
+    const handleCheckPaymentStatus = async () => {
+        if (!pendingPaymentOrder || isCheckingPayment) return;
+
+        setIsCheckingPayment(true);
+        setFormError("");
+        setStatusLine("Checking payment status...");
+        try {
+            const response = await getPaymentStatus(pendingPaymentOrder.id).unwrap();
+            const state = response?.data?.state;
+            if (state === "paid") {
+                setPlacedOrder({ ...pendingPaymentOrder, payment_status: "paid" });
+                setPendingPaymentOrder(null);
+            } else if (state === "failed") {
+                setFormError("Payment was not completed. You can safely retry; the same checkout token prevents a duplicate order.");
+            } else {
+                setFormError("Payment is still being confirmed by Razorpay. Please check the status again shortly.");
+            }
+        } catch (statusError) {
+            if (!handleUnauthorized(statusError)) {
+                setFormError(getErrorMessage(statusError, "We couldn't confirm the payment status. Please try again."));
+            }
+        } finally {
+            setStatusLine("");
+            setIsCheckingPayment(false);
+        }
+    };
+
     const openRazorpay = async (order) => {
-        if (!order?.razorpay || !order?.order?.id) {
-            throw new Error("The payment gateway did not return the information needed to start payment.");
+        const paymentDetails = order?.razorpay;
+        if (
+            !order?.order?.id
+            || !paymentDetails?.key
+            || !paymentDetails?.order_id
+            || !paymentDetails?.currency
+            || !Number.isFinite(Number(paymentDetails.amount))
+            || Number(paymentDetails.amount) <= 0
+        ) {
+            throw new Error("The payment gateway returned incomplete payment details. Please contact support before retrying.");
         }
 
         const Razorpay = await loadRazorpayScript();
@@ -298,10 +340,12 @@ function Checkout() {
                 throw new Error("The order was created, but its payment details were not returned. Please check your orders before retrying.");
             }
 
+            setPendingPaymentOrder(order.order);
             const paymentState = await openRazorpay(order);
             setStatusLine("");
             if (paymentState === "paid") {
                 setPlacedOrder({ ...order.order, payment_status: "paid" });
+                setPendingPaymentOrder(null);
             } else if (paymentState === "failed") {
                 setFormError("Payment was not completed. You can safely retry; the same checkout token prevents a duplicate order.");
             } else {
@@ -436,7 +480,7 @@ function Checkout() {
 
                             <fieldset className="checkout-page__payment">
                                 <legend>Payment method</legend>
-                                {paymentOptions.map(({ method, title, description, enabled }) => (
+                                {paymentOptions.map(({ method, title, description, disabledDescription, enabled }) => (
                                     <label
                                         className={`checkout-page__payment-option${enabled ? "" : " is-unavailable"}`}
                                         key={method}
@@ -451,7 +495,7 @@ function Checkout() {
                                         />
                                         <span>
                                             <strong>{title}</strong>
-                                            <small>{enabled ? description : "Online payments are not enabled right now"}</small>
+                                            <small>{enabled ? description : disabledDescription}</small>
                                         </span>
                                     </label>
                                 ))}
@@ -466,6 +510,16 @@ function Checkout() {
                                 </p>
                             )}
                             {statusLine && <p className="checkout-page__status" role="status">{statusLine}</p>}
+                            {pendingPaymentOrder && (
+                                <button
+                                    className="checkout-page__payment-status-check"
+                                    type="button"
+                                    onClick={handleCheckPaymentStatus}
+                                    disabled={isSubmitting || isCheckingPayment}
+                                >
+                                    {isCheckingPayment ? "Checking payment..." : "Check payment status"}
+                                </button>
+                            )}
                             {isSummaryError && (
                                 <p className="checkout-page__form-error" role="alert">
                                     {getErrorMessage(summaryError, "Checkout totals could not be loaded. Please refresh and try again.")}
@@ -474,13 +528,9 @@ function Checkout() {
                             <button
                                 className="checkout-page__submit"
                                 type="submit"
-                                disabled={isSubmitting || isSummaryLoading || isSummaryFetching || isSummaryError || !summary?.checkout_token || enabledPaymentMethods.length === 0}
+                                disabled={isSubmitting || isCheckingPayment || isSummaryLoading || isSummaryFetching || isSummaryError || !summary?.checkout_token || enabledPaymentMethods.length === 0}
                             >
-                                {isSubmitting
-                                    ? "Processing..."
-                                    : pricing?.grand_total == null
-                                        ? "Place order"
-                                        : `Place order · ₹${formatPrice(pricing.grand_total)}`}
+                                {submitLabel}
                                 <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                             </button>
                         </form>

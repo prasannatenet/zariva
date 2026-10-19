@@ -134,7 +134,10 @@ export const authApi = createApi({
             }),
         }),
         getPaymentStatus: builder.query({
-            query: (orderId) => `/checkout/payment-status/${encodeURIComponent(orderId)}`,
+            query: (orderId) => ({
+                url: `/checkout/payment-status/${encodeURIComponent(orderId)}`,
+                cache: "no-store",
+            }),
             keepUnusedDataFor: 0,
         }),
 

@@ -496,6 +496,24 @@
     cursor: pointer;
 }
 
+.checkout-page__payment-status-check {
+    margin: 0 0 1.2rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--p-800);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.checkout-page__payment-status-check:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+
 .checkout-page__submit:disabled {
     cursor: not-allowed;
     opacity: 0.6;
