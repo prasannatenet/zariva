@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { useGetCategoriesQuery } from "../../store/api/categoryApi";
+import { useGetSettingsQuery } from "../../store/api/productApi";
 import "./Footer.css";
-import logo from "../../assets/images/logo.png";
+import fallbackLogo from "../../assets/images/logo.png";
 
 const assurances = [
     { icon: "verified", label: "100% Certified Diamonds" },
@@ -26,6 +27,22 @@ const informationLinks = [
     { label: "Shipping & Return Policies", to: "/shipping-returns" },
 ];
 
+// Map common social platform names to a simple icon character / label
+const SOCIAL_ICONS = {
+    facebook: { label: "Facebook", char: "f" },
+    instagram: { label: "Instagram", char: "◎" },
+    twitter: { label: "X / Twitter", char: "X" },
+    x: { label: "X", char: "X" },
+    youtube: { label: "YouTube", char: "▶" },
+    pinterest: { label: "Pinterest", char: "p" },
+    whatsapp: { label: "WhatsApp", char: "w" },
+};
+
+function getSocialMeta(platform) {
+    const key = (platform || "").toLowerCase();
+    return SOCIAL_ICONS[key] ?? { label: platform, char: platform?.[0]?.toUpperCase() ?? "•" };
+}
+
 function FooterLinkColumn({ title, links }) {
     return (
         <div className="site-footer__column">
@@ -45,6 +62,34 @@ function Footer() {
     const { data: categoryData } = useGetCategoriesQuery();
     const categories = (categoryData?.data || []).slice(0, 5);
 
+    const { data: settingsData } = useGetSettingsQuery();
+    const settings = settingsData?.data ?? {};
+
+    const logoSrc = settings.logo || fallbackLogo;
+    const siteName = settings.site_name || "Vashu Jewels & Crafts";
+    const description = settings.description || null;
+    const phone = settings.phone || null;
+    const email = settings.email || null;
+    const address = [
+        settings.address,
+        settings.city,
+        settings.state,
+        settings.zip ? `- ${settings.zip}` : null,
+        settings.country,
+    ].filter(Boolean).join(", ") || null;
+
+    // Social links: API returns an array or object of { platform, url }
+    const socialLinks = (() => {
+        const raw = settings.social;
+        if (Array.isArray(raw)) return raw;
+        if (raw && typeof raw === "object") {
+            return Object.entries(raw).map(([platform, url]) => ({ platform, url }));
+        }
+        return [];
+    })();
+
+    const currentYear = new Date().getFullYear();
+
     return (
         <footer className="site-footer">
             <div className="site-footer__assurances">
@@ -62,15 +107,26 @@ function Footer() {
                 <div className="site-footer__inner">
                     <div className="site-footer__brand">
                         <Link to="/" className="site-footer__logo">
-                            <img src={logo} alt="" />
+                            <img src={logoSrc} alt={siteName} />
                         </Link>
-                        <h2>Corporate Office &amp; Flagship</h2>
-                        <address>
-                            Unit No. 1, Ground Floor, 20 New Road,<br />
-                            Bandra West, Mumbai - 654987,<br />
-                            Maharashtra, India
-                        </address>
-                        <p>CIN: JIEHHG4536GF89R</p>
+                        {description && <p className="site-footer__description">{description}</p>}
+                        {address && (
+                            <address>
+                                {address.split(",").map((part, i, arr) => (
+                                    <span key={i}>{part.trim()}{i < arr.length - 1 ? "," : ""}<br /></span>
+                                ))}
+                            </address>
+                        )}
+                        {phone && (
+                            <p>
+                                <a href={`tel:${phone}`}>{phone}</a>
+                            </p>
+                        )}
+                        {email && (
+                            <p>
+                                <a href={`mailto:${email}`}>{email}</a>
+                            </p>
+                        )}
                     </div>
 
                     <FooterLinkColumn title="Quick Links" links={quickLinks.slice(0, 3)} />
@@ -90,16 +146,34 @@ function Footer() {
             <div className="site-footer__bottom">
                 <div className="site-footer__bottom-inner">
                     <div>
-                        <p>© 2026, Vashu Jewels &amp; Crafts. All Rights Reserved.</p>
-                        <p>Official registered corporate entity: CIN JIEHHG4536GF89R • Bandra West, Mumbai</p>
+                        <p>© {currentYear}, {siteName}. All Rights Reserved.</p>
                     </div>
                     <div className="site-footer__socials" aria-label="Social links">
                         <span>Follow Us</span>
-                        <a href="https://www.facebook.com" aria-label="Facebook">f</a>
-                        <a href="https://www.instagram.com" aria-label="Instagram">◎</a>
-                        <a href="https://twitter.com" aria-label="X">X</a>
-                        <a href="https://www.youtube.com" aria-label="YouTube">▶</a>
-                        <a href="https://www.pinterest.com" aria-label="Pinterest">p</a>
+                        {socialLinks.length > 0 ? (
+                            socialLinks.map(({ platform, url }) => {
+                                const meta = getSocialMeta(platform);
+                                return (
+                                    <a
+                                        key={platform}
+                                        href={url}
+                                        aria-label={meta.label}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        {meta.char}
+                                    </a>
+                                );
+                            })
+                        ) : (
+                            <>
+                                <a href="https://www.facebook.com" aria-label="Facebook">f</a>
+                                <a href="https://www.instagram.com" aria-label="Instagram">i</a>
+                                <a href="https://twitter.com" aria-label="X">X</a>
+                                <a href="https://www.youtube.com" aria-label="YouTube">▶</a>
+                                <a href="https://www.pinterest.com" aria-label="Pinterest">p</a>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

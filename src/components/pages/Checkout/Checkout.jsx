@@ -1,37 +1,146 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { useApplyCouponMutation, useGetCartQuery } from "../../../store/api/authApi";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import {
+    useApplyCouponMutation,
+    useGetCartQuery,
+    useGetCheckoutSummaryQuery,
+    useLazyGetPaymentStatusQuery,
+    usePlaceOrderMutation,
+    useVerifyRazorpayMutation,
+} from "../../../store/api/authApi";
 import { useGetCouponsQuery } from "../../../store/api/productApi";
 import "./Checkout.css";
 
+const EMPTY_ADDRESS = {
+    billing_name: "",
+    billing_email: "",
+    billing_phone: "",
+    billing_line1: "",
+    billing_city: "",
+    billing_state: "",
+    billing_zip: "",
+    billing_country: "India",
+};
+
+const formatPrice = (amount) => Number(amount ?? 0).toLocaleString("en-IN", {
+    maximumFractionDigits: 2,
+});
+
+const sleep = (milliseconds) => new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds);
+});
+
+function loadRazorpayScript() {
+    return new Promise((resolve, reject) => {
+        if (window.Razorpay) {
+            resolve(window.Razorpay);
+            return;
+        }
+
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => {
+            if (window.Razorpay) {
+                resolve(window.Razorpay);
+            } else {
+                reject(new Error("Razorpay checkout could not be initialized."));
+            }
+        };
+        script.onerror = () => {
+            script.remove();
+            reject(new Error("Could not load Razorpay checkout. Please try again."));
+        };
+        document.body.appendChild(script);
+    });
+}
+
+function getErrorMessage(error, fallback) {
+    const validationErrors = error?.data?.errors;
+    const firstValidationError = validationErrors && typeof validationErrors === "object"
+        ? Object.values(validationErrors).flat().find((message) => typeof message === "string")
+        : null;
+
+    return firstValidationError || error?.data?.message || error?.message || fallback;
+}
+
 function Checkout() {
-    const { data, isLoading, isError, error } = useGetCartQuery();
+    const navigate = useNavigate();
+    const user = useSelector((state) => state.auth.user);
+    const { data, isLoading, isError, error, refetch } = useGetCartQuery();
     const { data: couponsData, isLoading: areCouponsLoading, isError: areCouponsError } = useGetCouponsQuery();
     const [applyCoupon, { isLoading: isApplyingCoupon }] = useApplyCouponMutation();
+    const [placeOrderRequest] = usePlaceOrderMutation();
+    const [verifyRazorpay] = useVerifyRazorpayMutation();
+    const [getPaymentStatus] = useLazyGetPaymentStatusQuery();
+
     const [couponCode, setCouponCode] = useState("");
+    const [couponInput, setCouponInput] = useState("");
     const [couponFeedback, setCouponFeedback] = useState(null);
-    const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [coins, setCoins] = useState("0");
+    const [paymentMethodChoice, setPaymentMethodChoice] = useState("cod");
+    const [address, setAddress] = useState(() => ({
+        ...EMPTY_ADDRESS,
+        billing_name: user?.name ?? "",
+        billing_email: user?.email ?? "",
+        billing_phone: user?.phone ?? "",
+    }));
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [formError, setFormError] = useState("");
+    const [statusLine, setStatusLine] = useState("");
+    const [placedOrder, setPlacedOrder] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const checkoutTokenRef = useRef(null);
+    const submittingRef = useRef(false);
+
     const cart = data?.data?.cart ?? data?.data ?? data;
     const items = Array.isArray(cart)
         ? cart
         : cart?.items ?? cart?.cart_items ?? cart?.products ?? [];
-    const cartMeta = data?.meta ?? cart?.meta ?? {};
-    const subtotal = Number(cartMeta.subtotal ?? cart?.subtotal ?? 0);
-    const total = Number(cartMeta.total ?? cart?.total ?? subtotal);
     const requiresLogin = error?.status === 401;
+    const summaryParams = {
+        ...(couponCode ? { coupon_code: couponCode } : {}),
+        coins: Math.max(0, Number(coins) || 0),
+    };
+    const {
+        currentData: summaryResponse,
+        isLoading: isSummaryLoading,
+        isFetching: isSummaryFetching,
+        isError: isSummaryError,
+        error: summaryError,
+    } = useGetCheckoutSummaryQuery(summaryParams, {
+        skip: isLoading || isError || !items.length || requiresLogin,
+    });
+    const summary = summaryResponse?.data;
+    const pricing = summary?.pricing;
+    const paymentProviders = summary?.payment_providers ?? {};
+    const enabledPaymentMethods = Object.entries(paymentProviders)
+        .filter(([, provider]) => provider?.enabled)
+        .map(([method]) => method);
+    const paymentMethod = enabledPaymentMethods.includes(paymentMethodChoice)
+        ? paymentMethodChoice
+        : enabledPaymentMethods.includes("cod")
+            ? "cod"
+            : enabledPaymentMethods[0] ?? "cod";
     const coupons = Array.isArray(couponsData?.data) ? couponsData.data : [];
-    const couponResult = appliedCoupon?.data?.coupon ?? appliedCoupon?.coupon ?? appliedCoupon?.data ?? appliedCoupon;
-    const couponDiscount = Number(
-        cartMeta.coupon_discount
-        ?? cartMeta.discount_amount
-        ?? cart?.coupon_discount
-        ?? cart?.discount_amount
-        ?? couponResult?.discount_amount
-        ?? couponResult?.coupon_discount
-        ?? 0
-    );
+    const userCoinBalance = Number(summary?.user_coins?.balance ?? 0);
 
-    const handleApplyCoupon = async (code = couponCode) => {
+    useEffect(() => {
+        if (summary?.checkout_token && !checkoutTokenRef.current) {
+            checkoutTokenRef.current = summary.checkout_token;
+        }
+    }, [summary?.checkout_token]);
+
+    const handleUnauthorized = (requestError) => {
+        if (requestError?.status !== 401) return false;
+        navigate("/login", {
+            state: { backgroundLocation: { pathname: "/checkout", search: "", hash: "" } },
+        });
+        return true;
+    };
+
+    const handleCouponSubmit = async (event, code = couponInput) => {
+        event?.preventDefault();
         const normalizedCode = code.trim();
         if (!normalizedCode) {
             setCouponFeedback({ type: "error", message: "Enter a coupon code to apply." });
@@ -39,6 +148,7 @@ function Checkout() {
         }
 
         setCouponFeedback(null);
+        setFormError("");
         try {
             const result = await applyCoupon(normalizedCode).unwrap();
             if (result?.success === false) {
@@ -49,24 +159,179 @@ function Checkout() {
                 return;
             }
 
+            checkoutTokenRef.current = null;
             setCouponCode(normalizedCode);
-            setAppliedCoupon(result);
+            setCouponInput(normalizedCode);
             setCouponFeedback({
                 type: "success",
-                message: result.message || `${normalizedCode} applied successfully.`,
+                message: result.message || `${normalizedCode} applied. Updated totals are shown below.`,
             });
-        } catch (applyError) {
+        } catch (couponError) {
+            if (handleUnauthorized(couponError)) return;
             setCouponFeedback({
                 type: "error",
-                message: applyError.data?.message || "Could not apply this coupon. Please check the code and try again.",
+                message: getErrorMessage(couponError, "Could not apply this coupon. Please check the code and try again."),
             });
         }
     };
 
-    const handleCouponSubmit = (event) => {
-        event.preventDefault();
-        handleApplyCoupon();
+    const handleAddressChange = (event) => {
+        const { name, value } = event.target;
+        setAddress((current) => ({ ...current, [name]: value }));
+        setFieldErrors((current) => ({ ...current, [name]: undefined }));
     };
+
+    const handleCoinsChange = (event) => {
+        checkoutTokenRef.current = null;
+        setCoins(event.target.value);
+    };
+
+    const pollPaymentStatus = async (orderId) => {
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+            setStatusLine("Confirming your payment...");
+            const response = await getPaymentStatus(orderId).unwrap();
+            const state = response?.data?.state;
+            if (state === "paid" || state === "failed" || state === "cod_confirmed") {
+                return state;
+            }
+            if (attempt < 4) await sleep(1500);
+        }
+        return "processing";
+    };
+
+    const openRazorpay = async (order) => {
+        if (!order?.razorpay || !order?.order?.id) {
+            throw new Error("The payment gateway did not return the information needed to start payment.");
+        }
+
+        const Razorpay = await loadRazorpayScript();
+        setStatusLine("Opening secure payment...");
+
+        return new Promise((resolve) => {
+            let settled = false;
+            const finish = (state) => {
+                if (settled) return;
+                settled = true;
+                resolve(state);
+            };
+            const checkAfterPopup = async () => {
+                try {
+                    finish(await pollPaymentStatus(order.order.id));
+                } catch (statusError) {
+                    setFormError(getErrorMessage(statusError, "We couldn't confirm the payment status. Please check your orders before trying again."));
+                    finish("unknown");
+                }
+            };
+
+            const payment = new Razorpay({
+                ...order.razorpay,
+                handler: async (response) => {
+                    try {
+                        const verified = await verifyRazorpay({
+                            order_id: order.order.id,
+                            ...response,
+                        }).unwrap();
+                        finish(verified?.data?.payment_status === "paid" ? "paid" : await pollPaymentStatus(order.order.id));
+                    } catch {
+                        await checkAfterPopup();
+                    }
+                },
+                modal: {
+                    ondismiss: checkAfterPopup,
+                },
+            });
+
+            payment.open();
+        });
+    };
+
+    const handlePlaceOrder = async (event) => {
+        event.preventDefault();
+        if (submittingRef.current) return;
+
+        submittingRef.current = true;
+        setIsSubmitting(true);
+        setFieldErrors({});
+        setFormError("");
+        setStatusLine("");
+
+        try {
+            const checkoutToken = checkoutTokenRef.current ?? summary?.checkout_token;
+            if (!checkoutToken) {
+                throw new Error("Checkout totals are still loading. Please try again.");
+            }
+            if (!enabledPaymentMethods.includes(paymentMethod)) {
+                throw new Error("The selected payment method is not currently available.");
+            }
+
+            const placed = await placeOrderRequest({
+                payment_method: paymentMethod,
+                checkout_token: checkoutToken,
+                ...(couponCode ? { coupon_code: couponCode } : {}),
+                coins: Math.max(0, Number(coins) || 0),
+                ...address,
+                shipping_same_as_billing: true,
+            }).unwrap();
+            const order = placed?.data;
+
+            if (order?.payment_method === "cod" || order?.is_paid) {
+                setPlacedOrder(order.order);
+                return;
+            }
+
+            if (order?.payment_method !== "razorpay") {
+                throw new Error("The order was created, but its payment details were not returned. Please check your orders before retrying.");
+            }
+
+            const paymentState = await openRazorpay(order);
+            setStatusLine("");
+            if (paymentState === "paid") {
+                setPlacedOrder({ ...order.order, payment_status: "paid" });
+            } else if (paymentState === "failed") {
+                setFormError("Payment was not completed. You can safely retry; the same checkout token prevents a duplicate order.");
+            } else {
+                setFormError("Payment is not confirmed yet. Check your orders or retry payment; do not place a separate order.");
+            }
+        } catch (requestError) {
+            if (!handleUnauthorized(requestError)) {
+                setFieldErrors(requestError?.data?.errors ?? {});
+                setFormError(getErrorMessage(requestError, "We couldn't place your order. Please try again."));
+            }
+        } finally {
+            submittingRef.current = false;
+            setIsSubmitting(false);
+        }
+    };
+
+    const renderFieldError = (name) => {
+        const value = fieldErrors[name];
+        const message = Array.isArray(value) ? value[0] : value;
+        return typeof message === "string"
+            ? <span className="checkout-page__field-error">{message}</span>
+            : null;
+    };
+
+    if (placedOrder) {
+        return (
+            <section className="checkout-page">
+                <div className="checkout-page__container">
+                    <div className="checkout-page__notice checkout-page__confirmation" role="status">
+                        <span className="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                        <p className="checkout-page__eyebrow">VASHU JEWELS &amp; CRAFTS / ORDER CONFIRMED</p>
+                        <h1>Thank you for your order.</h1>
+                        <p>
+                            Order <strong>#{placedOrder.order_number ?? placedOrder.id}</strong>
+                            {placedOrder.payment_method === "cod"
+                                ? " is confirmed. Payment is due on delivery."
+                                : " has been paid successfully."}
+                        </p>
+                        <Link to="/account">Continue to your account</Link>
+                        <Link to="/">Continue shopping</Link>
+                    </div>
+                </div>
+            </section>
+        );
+    }
 
     return (
         <section className="checkout-page">
@@ -74,11 +339,11 @@ function Checkout() {
                 <div className="checkout-page__heading">
                     <p className="checkout-page__eyebrow">VASHU JEWELS &amp; CRAFTS / CHECKOUT</p>
                     <h1>Complete your order</h1>
-                    <p>Review your pieces and add delivery details.</p>
+                    <p>Review your pieces, add delivery details, and choose how to pay.</p>
                 </div>
 
                 {isLoading ? (
-                    <p className="checkout-page__message">Loading your cart...</p>
+                    <p className="checkout-page__message" role="status">Loading your cart...</p>
                 ) : requiresLogin ? (
                     <div className="checkout-page__notice" role="alert">
                         <h2>Sign in to continue</h2>
@@ -88,7 +353,11 @@ function Checkout() {
                         </Link>
                     </div>
                 ) : isError ? (
-                    <p className="checkout-page__notice" role="alert">We couldn't load your cart. Please try again.</p>
+                    <div className="checkout-page__notice" role="alert">
+                        <h2>We couldn't load your cart</h2>
+                        <p>{getErrorMessage(error, "Please try again. If the problem continues, contact support.")}</p>
+                        <button type="button" onClick={refetch}>Try again</button>
+                    </div>
                 ) : items.length === 0 ? (
                     <div className="checkout-page__notice">
                         <h2>Your cart is empty</h2>
@@ -97,21 +366,24 @@ function Checkout() {
                     </div>
                 ) : (
                     <div className="checkout-page__layout">
-                        <form className="checkout-page__form">
+                        <form className="checkout-page__form" onSubmit={handlePlaceOrder}>
                             <fieldset>
                                 <legend>Contact details</legend>
                                 <label>
                                     Full name
-                                    <input name="name" type="text" autoComplete="name" required />
+                                    <input name="billing_name" value={address.billing_name} onChange={handleAddressChange} autoComplete="name" required maxLength="100" />
+                                    {renderFieldError("billing_name")}
                                 </label>
                                 <div className="checkout-page__field-row">
                                     <label>
                                         Email
-                                        <input name="email" type="email" autoComplete="email" required />
+                                        <input name="billing_email" type="email" value={address.billing_email} onChange={handleAddressChange} autoComplete="email" required maxLength="100" />
+                                        {renderFieldError("billing_email")}
                                     </label>
                                     <label>
                                         Phone
-                                        <input name="phone" type="tel" autoComplete="tel" required />
+                                        <input name="billing_phone" type="tel" value={address.billing_phone} onChange={handleAddressChange} autoComplete="tel" required maxLength="20" />
+                                        {renderFieldError("billing_phone")}
                                     </label>
                                 </div>
                             </fieldset>
@@ -120,29 +392,78 @@ function Checkout() {
                                 <legend>Delivery address</legend>
                                 <label>
                                     Address
-                                    <textarea name="address" autoComplete="street-address" rows="3" required />
+                                    <textarea name="billing_line1" value={address.billing_line1} onChange={handleAddressChange} autoComplete="street-address" rows="3" required maxLength="255" />
+                                    {renderFieldError("billing_line1")}
                                 </label>
                                 <div className="checkout-page__field-row">
                                     <label>
                                         City
-                                        <input name="city" type="text" autoComplete="address-level2" required />
+                                        <input name="billing_city" value={address.billing_city} onChange={handleAddressChange} autoComplete="address-level2" required maxLength="100" />
+                                        {renderFieldError("billing_city")}
                                     </label>
                                     <label>
                                         State
-                                        <input name="state" type="text" autoComplete="address-level1" required />
+                                        <input name="billing_state" value={address.billing_state} onChange={handleAddressChange} autoComplete="address-level1" required maxLength="100" />
+                                        {renderFieldError("billing_state")}
                                     </label>
                                     <label>
                                         PIN code
-                                        <input name="postal_code" type="text" inputMode="numeric" autoComplete="postal-code" required />
+                                        <input name="billing_zip" value={address.billing_zip} onChange={handleAddressChange} inputMode="numeric" autoComplete="postal-code" required maxLength="20" />
+                                        {renderFieldError("billing_zip")}
                                     </label>
                                 </div>
+                                <label>
+                                    Country
+                                    <input name="billing_country" value={address.billing_country} onChange={handleAddressChange} autoComplete="country-name" required maxLength="100" />
+                                    {renderFieldError("billing_country")}
+                                </label>
                             </fieldset>
 
-                            <p className="checkout-page__unavailable" role="status">
-                                Online order placement is not connected yet. Your cart and delivery details are ready, but this store API does not currently expose an order creation endpoint.
-                            </p>
-                            <button className="checkout-page__submit" type="button" disabled>
-                                Place order
+                            <fieldset className="checkout-page__payment">
+                                <legend>Payment method</legend>
+                                {enabledPaymentMethods.length === 0 ? (
+                                    <p className="checkout-page__message">No payment methods are currently available. Please try again later.</p>
+                                ) : enabledPaymentMethods.map((method) => (
+                                    <label className="checkout-page__payment-option" key={method}>
+                                        <input
+                                            type="radio"
+                                            name="payment_method"
+                                            value={method}
+                                            checked={paymentMethod === method}
+                                            onChange={() => setPaymentMethodChoice(method)}
+                                        />
+                                        <span>
+                                            <strong>{paymentProviders[method]?.name ?? (method === "cod" ? "Cash on Delivery" : "Razorpay")}</strong>
+                                            <small>{method === "cod" ? "Pay when your order arrives" : "Pay securely online"}</small>
+                                        </span>
+                                    </label>
+                                ))}
+                            </fieldset>
+
+                            {formError && (
+                                <p className="checkout-page__form-error" role="alert">
+                                    {formError}{" "}
+                                    {formError.toLowerCase().includes("session") && (
+                                        <Link to="/login" state={{ backgroundLocation: { pathname: "/checkout", search: "", hash: "" } }}>Sign in again</Link>
+                                    )}
+                                </p>
+                            )}
+                            {statusLine && <p className="checkout-page__status" role="status">{statusLine}</p>}
+                            {isSummaryError && (
+                                <p className="checkout-page__form-error" role="alert">
+                                    {getErrorMessage(summaryError, "Checkout totals could not be loaded. Please refresh and try again.")}
+                                </p>
+                            )}
+                            <button
+                                className="checkout-page__submit"
+                                type="submit"
+                                disabled={isSubmitting || isSummaryLoading || isSummaryFetching || isSummaryError || !summary?.checkout_token || enabledPaymentMethods.length === 0}
+                            >
+                                {isSubmitting
+                                    ? "Processing..."
+                                    : pricing?.grand_total == null
+                                        ? "Place order"
+                                        : `Place order · ₹${formatPrice(pricing.grand_total)}`}
                                 <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                             </button>
                         </form>
@@ -156,13 +477,10 @@ function Checkout() {
                                         type="text"
                                         aria-label="Coupon code"
                                         placeholder="Enter coupon code"
-                                        value={couponCode}
-                                        onChange={(event) => {
-                                            setCouponCode(event.target.value);
-                                            setCouponFeedback(null);
-                                        }}
+                                        value={couponInput}
+                                        onChange={(event) => setCouponInput(event.target.value)}
                                     />
-                                    <button type="submit" disabled={isApplyingCoupon || !couponCode.trim()}>
+                                    <button type="submit" disabled={isApplyingCoupon || !couponInput.trim()}>
                                         {isApplyingCoupon ? "Applying..." : "Apply"}
                                     </button>
                                 </form>
@@ -170,6 +488,20 @@ function Checkout() {
                                     <p className={`checkout-page__coupon-feedback is-${couponFeedback.type}`} role="status">
                                         {couponFeedback.message}
                                     </p>
+                                )}
+                                {couponCode && (
+                                    <button
+                                        className="checkout-page__remove-coupon"
+                                        type="button"
+                                        onClick={() => {
+                                            checkoutTokenRef.current = null;
+                                            setCouponCode("");
+                                            setCouponInput("");
+                                            setCouponFeedback({ type: "success", message: "Coupon removed. Totals are updating." });
+                                        }}
+                                    >
+                                        Remove {couponCode}
+                                    </button>
                                 )}
                                 <div className="checkout-page__coupon-list">
                                     {areCouponsLoading ? (
@@ -185,7 +517,7 @@ function Checkout() {
                                         >
                                             <div>
                                                 <strong>{coupon.offer_text || "Special offer"}</strong>
-                                                <span>Min. order ₹{Number(coupon.min_order_amount || 0).toLocaleString("en-IN")}</span>
+                                                <span>Min. order ₹{formatPrice(coupon.min_order_amount)}</span>
                                                 {coupon.validity_text && <span>{coupon.validity_text}</span>}
                                                 {!coupon.is_available && (
                                                     <span>{coupon.ineligible_reason || (coupon.is_redeemed ? "Already redeemed" : "Currently unavailable")}</span>
@@ -194,7 +526,7 @@ function Checkout() {
                                             <button
                                                 type="button"
                                                 disabled={!coupon.is_available || isApplyingCoupon}
-                                                onClick={() => handleApplyCoupon(coupon.code)}
+                                                onClick={(event) => handleCouponSubmit(event, coupon.code)}
                                                 aria-label={`Apply coupon ${coupon.code}`}
                                             >
                                                 {coupon.code}
@@ -204,6 +536,23 @@ function Checkout() {
                                     ))}
                                 </div>
                             </section>
+
+                            <label className="checkout-page__coins">
+                                Use Gehna Coins
+                                <span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max={userCoinBalance}
+                                        step="1"
+                                        value={coins}
+                                        onChange={handleCoinsChange}
+                                        disabled={!userCoinBalance}
+                                    />
+                                    <small>{userCoinBalance} available</small>
+                                </span>
+                            </label>
+
                             <div className="checkout-page__items">
                                 {items.map((item, index) => {
                                     const product = item.combo ?? item.product ?? item;
@@ -220,26 +569,51 @@ function Checkout() {
                                                 <h3>{product.name ?? item.name ?? "Jewellery piece"}</h3>
                                                 <p>Qty {quantity}</p>
                                             </div>
-                                            <strong>{lineTotal == null ? "—" : `₹${Number(lineTotal).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`}</strong>
+                                            <strong>{lineTotal == null ? "—" : `₹${formatPrice(lineTotal)}`}</strong>
                                         </article>
                                     );
                                 })}
                             </div>
-                            <div className="checkout-page__total">
-                                <span>Subtotal</span>
-                                <strong>₹{subtotal.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</strong>
-                            </div>
-                            {couponDiscount > 0 && (
-                                <div className="checkout-page__discount">
-                                    <span>Coupon discount</span>
-                                    <strong>-₹{couponDiscount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</strong>
-                                </div>
+
+                            {pricing ? (
+                                <>
+                                    <div className="checkout-page__total">
+                                        <span>Subtotal</span>
+                                        <strong>₹{formatPrice(pricing.subtotal)}</strong>
+                                    </div>
+                                    {Number(pricing.combo_discount) > 0 && (
+                                        <div className="checkout-page__discount">
+                                            <span>Combo savings</span>
+                                            <strong>-₹{formatPrice(pricing.combo_discount)}</strong>
+                                        </div>
+                                    )}
+                                    {Number(pricing.coupon_discount) > 0 && (
+                                        <div className="checkout-page__discount">
+                                            <span>Coupon discount</span>
+                                            <strong>-₹{formatPrice(pricing.coupon_discount)}</strong>
+                                        </div>
+                                    )}
+                                    {Number(pricing.coins_discount) > 0 && (
+                                        <div className="checkout-page__discount">
+                                            <span>Coins discount</span>
+                                            <strong>-₹{formatPrice(pricing.coins_discount)}</strong>
+                                        </div>
+                                    )}
+                                    <div className="checkout-page__total">
+                                        <span>Shipping</span>
+                                        <strong>{Number(pricing.shipping_charge) ? `₹${formatPrice(pricing.shipping_charge)}` : "Free"}</strong>
+                                    </div>
+                                    <div className="checkout-page__payable">
+                                        <span>Total</span>
+                                        <strong>₹{formatPrice(pricing.grand_total)}</strong>
+                                    </div>
+                                </>
+                            ) : (
+                                <p className="checkout-page__shipping-note" role="status">
+                                    {isSummaryLoading ? "Loading secure checkout totals..." : "Final shipping and discounts will be confirmed by the store."}
+                                </p>
                             )}
-                            <div className="checkout-page__payable">
-                                <span>Total</span>
-                                <strong>₹{total.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</strong>
-                            </div>
-                            <p className="checkout-page__shipping-note">Shipping and any applicable offers are confirmed at order placement.</p>
+                            <p className="checkout-page__shipping-note">Your final total is calculated securely by the store.</p>
                         </aside>
                     </div>
                 )}

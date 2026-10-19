@@ -94,6 +94,11 @@
     display: none;
 }
 
+.video-gallery__rail.is-single,
+.video-gallery__rail.is-few {
+    justify-content: center;
+}
+
 .video-gallery__card {
     display: flex;
     flex: 0 0 28.5rem;

@@ -1,19 +1,14 @@
 import TopBar from "./TopBar/TopBar";
-
 import { useGetCategoriesQuery } from "../../store/api/categoryApi";
+import { useGetSettingsQuery } from "../../store/api/productApi";
 import Navigation from "./Navigation/Navigation";
-
 import { Link } from "react-router-dom";
-
 import Search from "./Search/Search";
 import LocationSelector from "./LocationSelector/LocationSelector";
-
 import MobileMenu from "./MobileMenu/MobileMenu";
 import HeaderActions from "./HeaderActions/HeaderActions";
-
-
 import "./Header.css";
-import logo from "../../assets/images/logo.png";
+import fallbackLogo from "../../assets/images/logo.png";
 
 
 import { useEffect, useRef, useState } from "react";
@@ -29,6 +24,10 @@ function Header() {
     const headerPlaceholderRef = useRef(null);
     const { data: categoryData } = useGetCategoriesQuery();
     const categories = categoryData?.data || [];
+    const { data: settingsData } = useGetSettingsQuery();
+    const settings = settingsData?.data ?? {};
+    const logoSrc = settings.logo || fallbackLogo;
+    const siteName = settings.site_name || "Vashu Jewels & Crafts";
 
     useEffect(() => {
         const updateHeaderPosition = () => {
@@ -77,7 +76,7 @@ function Header() {
 
                             {/* Logo */}
                             <Link to="/" className="header-logo">
-                                <img src={logo} alt="Vashu Jewels & Crafts" />
+                                <img src={logoSrc} alt={siteName} />
                             </Link>
                             <div className="header-search-location">
                                 <LocationSelector />

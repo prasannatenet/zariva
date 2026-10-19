@@ -1,8 +1,9 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import BASE_URL from "../../api/config";
 import { productApi } from "./productApi";
 
 const baseQuery = fetchBaseQuery({
-    baseUrl: "/api/v1",
+    baseUrl: BASE_URL,
 
     prepareHeaders: (headers) => {
         const token = localStorage.getItem("gehna_api_token");
@@ -104,12 +105,37 @@ export const authApi = createApi({
                 method: "POST",
                 body: { coupon_code: couponCode },
             }),
-            invalidatesTags: ["Cart"],
         }),
 
         getCart: builder.query({
             query: () => "/cart",
             providesTags: ["Cart"],
+        }),
+
+        getCheckoutSummary: builder.query({
+            query: (params = {}) => ({
+                url: "/checkout/summary",
+                params,
+            }),
+        }),
+        placeOrder: builder.mutation({
+            query: (order) => ({
+                url: "/checkout/place-order",
+                method: "POST",
+                body: order,
+            }),
+            invalidatesTags: ["Cart"],
+        }),
+        verifyRazorpay: builder.mutation({
+            query: (payment) => ({
+                url: "/checkout/verify-razorpay",
+                method: "POST",
+                body: payment,
+            }),
+        }),
+        getPaymentStatus: builder.query({
+            query: (orderId) => `/checkout/payment-status/${encodeURIComponent(orderId)}`,
+            keepUnusedDataFor: 0,
         }),
 
         // CURRENT USER
@@ -129,5 +155,9 @@ export const {
     useRemoveCartItemMutation,
     useApplyCouponMutation,
     useGetCartQuery,
+    useGetCheckoutSummaryQuery,
+    usePlaceOrderMutation,
+    useVerifyRazorpayMutation,
+    useLazyGetPaymentStatusQuery,
     useGetMeQuery,
 } = authApi;

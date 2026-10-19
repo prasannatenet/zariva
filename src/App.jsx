@@ -1,13 +1,35 @@
+import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
-import Home from "./components/pages/Home/Home";
-import Login from "./components/pages/Login/Login";
-import Register from "./components/pages/Register/Register";
-import Account from "./components/pages/Account/Account";
-import ProductDetail from "./components/pages/ProductDetail/ProductDetail"
-import Checkout from "./components/pages/Checkout/Checkout";
-import Cart from "./components/pages/Cart/Cart";
-import CategoryListing from "./components/pages/CategoryListing/CategoryListing";
+import SiteMetaSync from "./components/SiteMetaSync/SiteMetaSync";
+
+const Home = lazy(() => import("./components/pages/Home/Home"));
+const Login = lazy(() => import("./components/pages/Login/Login"));
+const Register = lazy(() => import("./components/pages/Register/Register"));
+const Account = lazy(() => import("./components/pages/Account/Account"));
+const ProductDetail = lazy(() => import("./components/pages/ProductDetail/ProductDetail"));
+const Checkout = lazy(() => import("./components/pages/Checkout/Checkout"));
+const Cart = lazy(() => import("./components/pages/Cart/Cart"));
+const CategoryListing = lazy(() => import("./components/pages/CategoryListing/CategoryListing"));
+
+function RouteFallback() {
+    return (
+        <div
+            style={{
+                minHeight: "60vh",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "1rem",
+            }}
+            role="status"
+            aria-live="polite"
+        >
+            <span className="loading__spinner" aria-hidden="true" />
+            <span>Loading...</span>
+        </div>
+    );
+}
 
 
 function AppRoutes() {
@@ -17,7 +39,7 @@ function AppRoutes() {
         (isAuthRoute ? { pathname: "/", search: "", hash: "" } : location);
 
     return (
-        <>
+        <Suspense fallback={<RouteFallback />}>
             <Routes location={backgroundLocation}>
                 <Route element={<MainLayout />}>
                     <Route path="/" element={<Home />} />
@@ -34,13 +56,14 @@ function AppRoutes() {
                     <Route path="/register" element={<Register />} />
                 </Routes>
             )}
-        </>
+        </Suspense>
     );
 }
 
 function App() {
     return (
         <BrowserRouter>
+            <SiteMetaSync />
             <AppRoutes />
         </BrowserRouter>
     );

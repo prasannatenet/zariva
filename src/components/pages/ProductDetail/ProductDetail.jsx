@@ -77,14 +77,85 @@ function ProductDetail() {
     const productImages = variationImages.length
         ? variationImages
         : (product.images?.length ? product.images : [product.primary_image]);
-    const images = productImages
+    const rawImages = productImages
         .map((image) => typeof image === "string" ? image : image?.url ?? image?.src)
         .filter(Boolean);
-    const selectedImageIndex = gallerySelection.slug === slug
+    // Deduplicate images while preserving order
+    const images = rawImages.filter((image, index, array) => array.indexOf(image) === index);
+
+    const productVideos = Array.isArray(displayedProduct.videos) && displayedProduct.videos.length > 0
+        ? displayedProduct.videos
+        : Array.isArray(product.videos)
+            ? product.videos
+            : [];
+
+    const videos = productVideos
+        .map((video, index) => {
+            if (!video) return null;
+            if (typeof video === "string") {
+                return {
+                    id: `video-${index}`,
+                    url: video,
+                    download_url: video,
+                    is_primary: index === 0,
+                    thumbnail: null,
+                };
+            }
+            const videoUrl = video.download_url || video.url;
+            if (!videoUrl) return null;
+            return {
+                id: video.id ?? `video-${index}`,
+                url: videoUrl,
+                download_url: video.download_url || video.url,
+                is_primary: Boolean(video.is_primary),
+                thumbnail: null,
+            };
+        })
+        .filter(Boolean);
+
+    // Build unified gallery media items:
+    // If images exist: hero image first, then videos, then remaining images.
+    const mediaItems = [];
+    if (images.length > 0) {
+        mediaItems.push({
+            type: "image",
+            url: images[0],
+            thumbnail: images[0],
+            id: "image-0",
+        });
+        videos.forEach((video, index) => {
+            mediaItems.push({
+                type: "video",
+                url: video.url,
+                thumbnail: null,
+                id: `video-${video.id ?? index}`,
+            });
+        });
+        images.slice(1).forEach((img, index) => {
+            mediaItems.push({
+                type: "image",
+                url: img,
+                thumbnail: img,
+                id: `image-${index + 1}`,
+            });
+        });
+    } else if (videos.length > 0) {
+        videos.forEach((video, index) => {
+            mediaItems.push({
+                type: "video",
+                url: video.url,
+                thumbnail: video.thumbnail || null,
+                id: `video-${video.id ?? index}`,
+            });
+        });
+    }
+
+    const selectedMediaIndex = gallerySelection.slug === slug
         && gallerySelection.variationIndex === selectedVariationIndex
-        ? Math.min(gallerySelection.index, Math.max(images.length - 1, 0))
+        ? Math.min(gallerySelection.index, Math.max(mediaItems.length - 1, 0))
         : 0;
-    const selectedImage = images[selectedImageIndex];
+    const selectedMedia = mediaItems[selectedMediaIndex] ?? null;
+    const selectedImage = selectedMedia?.type === "image" ? selectedMedia.url : (images[0] ?? null);
     const colors = Array.isArray(product.colors) ? product.colors : [];
     const sizes = Array.isArray(product.sizes) ? product.sizes : [];
     const rating = Number(reviews.summary?.average ?? product.rating) || 0;
@@ -350,12 +421,12 @@ function ProductDetail() {
             <div className="product-detail">
                 <div className="container">
                     <div className="product-detail__layout">
-                        <section className="product-detail__gallery" aria-label="Product images">
-                            {images.length > 0 ? (
-                                <div className={`product-detail__gallery-layout${images.length === 1 ? " is-single" : ""}`}>
-                                    {images.length > 1 && (
+                        <section className="product-detail__gallery" aria-label="Product media gallery">
+                            {mediaItems.length > 0 ? (
+                                <div className={`product-detail__gallery-layout${mediaItems.length === 1 ? " is-single" : ""}`}>
+                                    {mediaItems.length > 1 && (
                                         <div className="product-detail__thumbnail-column">
-                                            {images.length > 5 && (
+                                            {mediaItems.length > 5 && (
                                                 <button
                                                     className="product-detail__thumbnail-arrow"
                                                     type="button"
@@ -366,27 +437,45 @@ function ProductDetail() {
                                                 </button>
                                             )}
                                             <div className="product-detail__thumbnail-rail" ref={thumbnailRailRef}>
-                                                {images.map((image, index) => (
-                                                    <button
-                                                        className={`product-detail__thumbnail${index === selectedImageIndex ? " is-selected" : ""}`}
-                                                        key={`${image}-${index}`}
-                                                        type="button"
-                                                        aria-label={`Show image ${index + 1} of ${product.name}`}
-                                                        aria-pressed={index === selectedImageIndex}
-                                                        onClick={() => {
-                                                            setGallerySelection({
-                                                                slug,
-                                                                variationIndex: selectedVariationIndex,
-                                                                index,
-                                                            });
-                                                            setZoomPreview(null);
-                                                        }}
-                                                    >
-                                                        <img src={image} alt="" />
-                                                    </button>
-                                                ))}
+                                                {mediaItems.map((item, index) => {
+                                                    const isSelected = index === selectedMediaIndex;
+                                                    return (
+                                                        <button
+                                                            className={`product-detail__thumbnail${item.type === "video" ? " is-video" : ""}${isSelected ? " is-selected" : ""}`}
+                                                            key={`${item.id}-${index}`}
+                                                            type="button"
+                                                            aria-label={item.type === "video" ? `Play video of ${product.name}` : `Show image ${index + 1} of ${product.name}`}
+                                                            aria-pressed={isSelected}
+                                                            onClick={() => {
+                                                                setGallerySelection({
+                                                                    slug,
+                                                                    variationIndex: selectedVariationIndex,
+                                                                    index,
+                                                                });
+                                                                setZoomPreview(null);
+                                                            }}
+                                                        >
+                                                            {item.type === "video" ? (
+                                                                <div className="product-detail__thumbnail-video-wrapper">
+                                                                    <video
+                                                                        className="product-detail__thumbnail-video-preview"
+                                                                        src={`${item.url}#t=0.001`}
+                                                                        muted
+                                                                        playsInline
+                                                                        preload="metadata"
+                                                                    />
+                                                                    <div className="product-detail__thumbnail-play-overlay">
+                                                                        <span className="material-symbols-outlined" aria-hidden="true">play_arrow</span>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <img src={item.url} alt="" />
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
-                                            {images.length > 5 && (
+                                            {mediaItems.length > 5 && (
                                                 <button
                                                     className="product-detail__thumbnail-arrow"
                                                     type="button"
@@ -398,37 +487,65 @@ function ProductDetail() {
                                             )}
                                         </div>
                                     )}
-                                    <div
-                                        className="product-detail__main-image"
-                                        data-image={selectedImage}
-                                        onMouseMove={handleImageZoom}
-                                        onMouseLeave={() => setZoomPreview(null)}
-                                    >
-                                        <img
-                                            src={selectedImage}
-                                            alt={`${product.name} view ${selectedImageIndex + 1}`}
-                                        />
-                                        {discount > 0 && (
-                                            <span className="product-detail__image-discount">
-                                                {discount}% OFF
-                                            </span>
-                                        )}
-                                    </div>
+
+                                    {selectedMedia?.type === "video" ? (
+                                        <div className="product-detail__main-image product-detail__main-image--video">
+                                            <video
+                                                key={selectedMedia.url}
+                                                className="product-detail__main-video"
+                                                src={selectedMedia.url}
+                                                controls
+                                                controlsList="nodownload noplaybackrate"
+                                                disablePictureInPicture
+                                                onContextMenu={(e) => e.preventDefault()}
+                                                autoPlay
+                                                muted
+                                                playsInline
+                                                loop
+                                                preload="metadata"
+                                            >
+                                                Your browser does not support the video tag.
+                                            </video>
+                                            {discount > 0 && (
+                                                <span className="product-detail__image-discount">
+                                                    {discount}% OFF
+                                                </span>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div
+                                            className="product-detail__main-image"
+                                            data-image={selectedImage}
+                                            onMouseMove={handleImageZoom}
+                                            onMouseLeave={() => setZoomPreview(null)}
+                                        >
+                                            <img
+                                                src={selectedImage}
+                                                alt={`${product.name} view ${selectedMediaIndex + 1}`}
+                                            />
+                                            {discount > 0 && (
+                                                <span className="product-detail__image-discount">
+                                                    {discount}% OFF
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+
                                     <div className="trustBar">
                                         <div className="trustPanel">
-                                            <span class="material-symbols-outlined">
+                                            <span className="material-symbols-outlined">
                                                 security
                                             </span>
                                             <div>100% Authentic</div>
                                         </div>
                                         <div className="trustPanel">
-                                            <span class="material-symbols-outlined">
+                                            <span className="material-symbols-outlined">
                                                 loyalty
                                             </span>
                                             <div>Best Price Guaranteed</div>
                                         </div>
                                         <div className="trustPanel">
-                                            <span class="material-symbols-outlined">
+                                            <span className="material-symbols-outlined">
                                                 delivery_truck_speed
                                             </span>
                                             <div>Quick Shipping</div>
@@ -436,9 +553,9 @@ function ProductDetail() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="product-detail__image-placeholder">Image unavailable</div>
+                                <div className="product-detail__image-placeholder">Media unavailable</div>
                             )}
-                            {zoomPreview && (
+                            {zoomPreview && selectedMedia?.type === "image" && (
                                 <div className="product-detail__zoom-preview" aria-hidden="true">
                                     <img
                                         src={zoomPreview.src}

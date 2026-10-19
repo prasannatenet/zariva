@@ -137,7 +137,7 @@ function Home() {
             </section>
 
             <CardSpread />
-            <VideoGallery />
+            <VideoGallery products={products} />
             <InstagramSection products={products} />
 
         </>

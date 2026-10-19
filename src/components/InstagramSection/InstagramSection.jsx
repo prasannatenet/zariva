@@ -11,7 +11,7 @@ import secondReel from "../../assets/images/316570_medium.mp4";
 import Button from "../Button/Button";
 import "./InstagramSection.css";
 
-const phoneReels = [firstReel, secondReel];
+const fallbackReels = [firstReel, secondReel];
 
 const fallbackPosts = [
     { image: earringsImage, caption: "A little sparkle for every day" },
@@ -24,10 +24,25 @@ const fallbackPosts = [
     { image: earringsImage, caption: "Celebrate beautifully" },
 ];
 
-const instagramProfileUrl = "https://www.instagram.com/asuhjewelscrafts/";
+const instagramProfileUrl = "https://www.instagram.com/vasuhjewelscrafts/";
 
 function InstagramSection({ products = [] }) {
     const [activeReelIndex, setActiveReelIndex] = useState(0);
+
+    // Collect product video URLs from API products
+    const productVideoUrls = [];
+    for (const product of products) {
+        const videos = Array.isArray(product.videos) ? product.videos : [];
+        for (const video of videos) {
+            const url = typeof video === "string" ? video : (video?.download_url || video?.url);
+            if (url) {
+                productVideoUrls.push(url);
+            }
+        }
+        if (productVideoUrls.length >= 4) break; // cap at 4 reels
+    }
+    const phoneReels = productVideoUrls.length > 0 ? productVideoUrls : fallbackReels;
+
     const productPosts = products
         .filter((product) => product.primary_image || product.images?.[0])
         .map((product) => ({
@@ -55,7 +70,7 @@ function InstagramSection({ products = [] }) {
                     >
                         <span className="instagram-section__avatar" aria-hidden="true">Z</span>
                         <span className="instagram-section__profile-copy">
-                            <strong id="instagram-section-title">@asuhjewelscrafts</strong>
+                            <strong id="instagram-section-title">@vasuhjewelscrafts</strong>
                             <span>Daily inspiration for mindful adornment.</span>
                         </span>
                     </a>
@@ -78,7 +93,7 @@ function InstagramSection({ products = [] }) {
                         <header className="instagram-section__phone-header">
                             <span className="instagram-section__mini-avatar">Z</span>
                             <span>
-                                <strong>@asuhjewelscrafts</strong>
+                                <strong>@vasuhjewelscrafts</strong>
                                 <small>Jewellery &amp; lifestyle</small>
                             </span>
                             <span className="material-symbols-outlined" aria-hidden="true">more_horiz</span>
@@ -104,7 +119,7 @@ function InstagramSection({ products = [] }) {
                             <span className="material-symbols-outlined instagram-section__bookmark">bookmark_border</span>
                         </div>
                         <p className="instagram-section__phone-caption">
-                            <strong>asuhjewelscrafts</strong> A little sparkle in motion.
+                            <strong>vasuhjewelscrafts</strong> A little sparkle in motion.
                         </p>
                         <div className="instagram-section__phone-home-indicator" aria-hidden="true" />
                     </div>

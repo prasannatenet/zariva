@@ -1,49 +1,62 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useGetProductsQuery } from "../../store/api/productApi";
 import Button from "../Button/Button";
-import firstVideo from "../../assets/images/371403_medium.mp4";
-import secondVideo from "../../assets/images/316570_medium.mp4";
-import pendantImage from "../../assets/images/hero-pendent.png";
-import ringImage from "../../assets/images/hero-ring.png";
 import "./VideoGallery.css";
-
-const videoClips = [firstVideo, secondVideo];
-const productImages = [pendantImage, ringImage];
-
-const videoProducts = [
-    { name: "Everyday Elegance Pendant", category: "Pendants", rating: "4.8", reviews: 24, price: 2499, originalPrice: 3299, views: 45 },
-    { name: "Timeless Gold Chain", category: "Chains", rating: "4.9", reviews: 18, price: 3299, originalPrice: 4199, views: 384 },
-    { name: "Classic Diamond Ring", category: "Rings", rating: "4.7", reviews: 31, price: 4999, originalPrice: 6299, views: 129 },
-    { name: "Graceful Bracelet", category: "Bracelets", rating: "4.8", reviews: 16, price: 2999, originalPrice: 3999, views: 100 },
-    { name: "Statement Pendant Set", category: "Pendants", rating: "4.9", reviews: 21, price: 3799, originalPrice: 4799, views: 718 },
-    { name: "Everyday Gold Chain", category: "Chains", rating: "4.6", reviews: 12, price: 2799, originalPrice: 3499, views: 947 },
-    { name: "Signature Solitaire Ring", category: "Rings", rating: "5.0", reviews: 9, price: 5499, originalPrice: 6999, views: 216 },
-    { name: "Signature Solitaire Ring", category: "Rings", rating: "5.0", reviews: 9, price: 5499, originalPrice: 6999, views: 183 },
-    { name: "Signature Solitaire Ring", category: "Rings", rating: "5.0", reviews: 9, price: 5499, originalPrice: 6999, views: 325 },
-    { name: "Signature Solitaire Ring", category: "Rings", rating: "5.0", reviews: 9, price: 5499, originalPrice: 6999, views: 468 },
-];
 
 const formatPrice = (price) => `₹${Number(price).toLocaleString("en-IN")}`;
 
-function VideoGallery() {
+function VideoGallery({ products: propProducts }) {
+    const { data: apiData } = useGetProductsQuery(
+        { per_page: 60 },
+        { skip: Boolean(propProducts && propProducts.length > 0) }
+    );
+    const rawProducts = (propProducts && propProducts.length > 0) ? propProducts : (apiData?.data || []);
+
+    const videoProducts = [];
+    rawProducts.forEach((product) => {
+        const videos = Array.isArray(product.videos) ? product.videos : [];
+        videos.forEach((video, videoIndex) => {
+            const videoUrl = typeof video === "string" ? video : (video?.download_url || video?.url);
+            if (videoUrl) {
+                videoProducts.push({
+                    id: product.id,
+                    videoId: (typeof video === "object" && video?.id) ? video.id : `video-${product.id}-${videoIndex}`,
+                    name: product.name,
+                    slug: product.slug,
+                    category: product.category?.name || "Jewellery",
+                    price: Number(product.price) || 0,
+                    originalPrice: Number(product.regular_price || product.base_price || product.price) || 0,
+                    image: product.primary_image || product.images?.[0] || "",
+                    videoUrl,
+                    views: product.views || (100 + ((Number(product.id || 1) * 73) % 900)),
+                });
+            }
+        });
+    });
+
     const [selectedIndex, setSelectedIndex] = useState(null);
     const [isMuted, setIsMuted] = useState(true);
     const railRef = useRef(null);
     const navigate = useNavigate();
-    const selectedProduct = selectedIndex === null ? null : videoProducts[selectedIndex];
+
+    const validSelectedIndex = selectedIndex !== null && selectedIndex < videoProducts.length
+        ? selectedIndex
+        : null;
+    const selectedProduct = validSelectedIndex === null ? null : videoProducts[validSelectedIndex];
 
     useEffect(() => {
-        if (selectedIndex === null) return undefined;
+        if (selectedProduct === null) return undefined;
 
         const previousOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
 
         const closeOnEscape = (event) => {
             if (event.key === "Escape") setSelectedIndex(null);
-            if (event.key === "ArrowLeft") {
+            if (event.key === "ArrowLeft" && videoProducts.length > 1) {
                 setSelectedIndex((index) => (index - 1 + videoProducts.length) % videoProducts.length);
             }
-            if (event.key === "ArrowRight") {
+            if (event.key === "ArrowRight" && videoProducts.length > 1) {
                 setSelectedIndex((index) => (index + 1) % videoProducts.length);
             }
         };
@@ -53,9 +66,14 @@ function VideoGallery() {
             document.body.style.overflow = previousOverflow;
             window.removeEventListener("keydown", closeOnEscape);
         };
-    }, [selectedIndex]);
+    }, [selectedProduct, videoProducts.length]);
+
+    if (videoProducts.length === 0) {
+        return null;
+    }
 
     const moveSlider = (direction) => {
+        if (videoProducts.length <= 1) return;
         setSelectedIndex((index) => (index + direction + videoProducts.length) % videoProducts.length);
     };
 
@@ -69,16 +87,22 @@ function VideoGallery() {
         });
     };
 
-    const handleBuyNow = () => {
-        const categoryPaths = {
-            Bracelets: "/bracelets",
-            Chains: "/chains",
-            Pendants: "/pendants",
-            Rings: "/rings",
-        };
-        navigate(categoryPaths[selectedProduct.category] || "/");
+    const handleBuyNow = (product) => {
+        const target = product || selectedProduct;
+        if (!target) return;
+        if (target.slug) {
+            navigate(`/product/${target.slug}`);
+        } else {
+            navigate("/");
+        }
         setSelectedIndex(null);
     };
+
+    const sliderOffsets = videoProducts.length >= 5
+        ? [-2, -1, 0, 1, 2]
+        : videoProducts.length >= 3
+            ? [-1, 0, 1]
+            : [0];
 
     return (
         <section className="video-gallery" aria-labelledby="video-gallery-title">
@@ -86,12 +110,16 @@ function VideoGallery() {
                 <h2 id="video-gallery-title">Trending Looks</h2>
             </div>
 
-            <div className="video-gallery__rail" ref={railRef} aria-label="Jewellery videos">
+            <div
+                className={`video-gallery__rail${videoProducts.length === 1 ? " is-single" : ""}${videoProducts.length <= 2 ? " is-few" : ""}`}
+                ref={railRef}
+                aria-label="Jewellery videos"
+            >
                 {videoProducts.map((product, index) => (
                     <button
                         className="video-gallery__card"
                         type="button"
-                        key={`${product.name}-${index}`}
+                        key={`${product.videoId || product.id}-${index}`}
                         onClick={() => {
                             setSelectedIndex(index);
                             setIsMuted(true);
@@ -99,13 +127,13 @@ function VideoGallery() {
                         aria-label={`Watch video and details for ${product.name}`}
                     >
                         <span className="video-gallery__visual">
-                            <span className="video-gallery__views" aria-label={`${product.views} views`}>
+                            {/* <span className="video-gallery__views" aria-label={`${product.views} views`}>
                                 <span className="material-symbols-outlined" aria-hidden="true">visibility</span>
                                 {product.views}
-                            </span>
+                            </span> */}
                             <video
                                 className="video-gallery__preview"
-                                src={videoClips[index % videoClips.length]}
+                                src={product.videoUrl}
                                 muted
                                 loop
                                 autoPlay
@@ -120,7 +148,7 @@ function VideoGallery() {
                         <span className="video-gallery__product-card">
                             <img
                                 className="video-gallery__product-image"
-                                src={productImages[index % productImages.length]}
+                                src={product.image}
                                 alt=""
                                 aria-hidden="true"
                             />
@@ -128,29 +156,34 @@ function VideoGallery() {
                                 <span className="video-gallery__product-name">{product.name}</span>
                                 <span className="video-gallery__product-prices">
                                     <strong>{formatPrice(product.price)}</strong>
-                                    <del>{formatPrice(product.originalPrice)}</del>
+                                    {product.originalPrice > product.price && (
+                                        <del>{formatPrice(product.originalPrice)}</del>
+                                    )}
                                 </span>
                             </span>
                         </span>
                     </button>
                 ))}
             </div>
-            <div className="video-gallery__controls" aria-label="Video gallery navigation">
-                <Button
-                    text=""
-                    materialIcon="arrow_back"
-                    ariaLabel="Scroll videos left"
-                    onClick={() => scrollRail(-1)}
-                    className="video-gallery__control-button"
-                />
-                <Button
-                    text=""
-                    materialIcon="arrow_forward"
-                    ariaLabel="Scroll videos right"
-                    onClick={() => scrollRail(1)}
-                    className="video-gallery__control-button"
-                />
-            </div>
+
+            {videoProducts.length > 1 && (
+                <div className="video-gallery__controls" aria-label="Video gallery navigation">
+                    <Button
+                        text=""
+                        materialIcon="arrow_back"
+                        ariaLabel="Scroll videos left"
+                        onClick={() => scrollRail(-1)}
+                        className="video-gallery__control-button"
+                    />
+                    <Button
+                        text=""
+                        materialIcon="arrow_forward"
+                        ariaLabel="Scroll videos right"
+                        onClick={() => scrollRail(1)}
+                        className="video-gallery__control-button"
+                    />
+                </div>
+            )}
 
             {selectedProduct && (
                 <div
@@ -168,15 +201,17 @@ function VideoGallery() {
                         <h2 className="video-gallery__modal-title" id="video-gallery-modal-title">
                             Trending video: {selectedProduct.name}
                         </h2>
-                        <Button
-                            text=""
-                            materialIcon="chevron_left"
-                            ariaLabel="Previous video"
-                            onClick={() => moveSlider(-1)}
-                            className="video-gallery__modal-arrow video-gallery__modal-arrow--previous"
-                        />
+                        {videoProducts.length > 1 && (
+                            <Button
+                                text=""
+                                materialIcon="chevron_left"
+                                ariaLabel="Previous video"
+                                onClick={() => moveSlider(-1)}
+                                className="video-gallery__modal-arrow video-gallery__modal-arrow--previous"
+                            />
+                        )}
                         <div className="video-gallery__slider">
-                            {[-2, -1, 0, 1, 2].map((offset) => {
+                            {sliderOffsets.map((offset) => {
                                 const slideIndex = (selectedIndex + offset + videoProducts.length) % videoProducts.length;
                                 const slideProduct = videoProducts[slideIndex];
                                 const isActive = offset === 0;
@@ -184,7 +219,7 @@ function VideoGallery() {
                                 return (
                                     <article
                                         className={`video-gallery__slide${isActive ? " is-active" : ""}${Math.abs(offset) === 1 ? " is-near" : ""}${Math.abs(offset) === 2 ? " is-far" : ""}${offset < 0 ? " is-left" : ""}`}
-                                        key={slideIndex}
+                                        key={`${slideProduct.videoId || slideProduct.id}-${offset}`}
                                         style={{
                                             left: `calc(50% + ${offset * 20}rem)`,
                                             zIndex: 5 - Math.abs(offset),
@@ -204,11 +239,14 @@ function VideoGallery() {
                                     >
                                         <video
                                             className="video-gallery__modal-video"
-                                            src={videoClips[slideIndex % videoClips.length]}
+                                            src={slideProduct.videoUrl}
                                             muted={isMuted || !isActive}
                                             autoPlay
                                             loop
                                             playsInline
+                                            controlsList="nodownload noplaybackrate"
+                                            disablePictureInPicture
+                                            onContextMenu={(event) => event.preventDefault()}
                                             preload={isActive ? "auto" : "metadata"}
                                         />
                                         {isActive && (
@@ -231,7 +269,7 @@ function VideoGallery() {
                                                 </div>
                                                 <div className="video-gallery__modal-product">
                                                     <img
-                                                        src={productImages[slideIndex % productImages.length]}
+                                                        src={slideProduct.image}
                                                         alt=""
                                                         aria-hidden="true"
                                                     />
@@ -239,11 +277,13 @@ function VideoGallery() {
                                                         <strong>{slideProduct.name}</strong>
                                                         <span>
                                                             {formatPrice(slideProduct.price)}
-                                                            <del>{formatPrice(slideProduct.originalPrice)}</del>
+                                                            {slideProduct.originalPrice > slideProduct.price && (
+                                                                <del>{formatPrice(slideProduct.originalPrice)}</del>
+                                                            )}
                                                         </span>
                                                         <Button
                                                             text="Shop Now"
-                                                            onClick={handleBuyNow}
+                                                            onClick={() => handleBuyNow(slideProduct)}
                                                             className="video-gallery__shop-button"
                                                         />
                                                     </div>
@@ -254,13 +294,15 @@ function VideoGallery() {
                                 );
                             })}
                         </div>
-                        <Button
-                            text=""
-                            materialIcon="chevron_right"
-                            ariaLabel="Next video"
-                            onClick={() => moveSlider(1)}
-                            className="video-gallery__modal-arrow video-gallery__modal-arrow--next"
-                        />
+                        {videoProducts.length > 1 && (
+                            <Button
+                                text=""
+                                materialIcon="chevron_right"
+                                ariaLabel="Next video"
+                                onClick={() => moveSlider(1)}
+                                className="video-gallery__modal-arrow video-gallery__modal-arrow--next"
+                            />
+                        )}
                     </section>
                 </div>
             )}

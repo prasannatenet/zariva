@@ -1,11 +1,12 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import BASE_URL from "../../api/config";
 
 export const productApi = createApi({
     reducerPath: "productApi",
     tagTypes: ["Product"],
 
     baseQuery: fetchBaseQuery({
-        baseUrl: "/api/v1",
+        baseUrl: BASE_URL,
     }),
 
     endpoints: (builder) => ({
@@ -50,6 +51,14 @@ export const productApi = createApi({
         getSettings: builder.query({
             query: () => "/settings",
         }),
+
+        getHomeData: builder.query({
+            query: () => "/home",
+        }),
+
+        getSliders: builder.query({
+            query: () => "/sliders",
+        }),
     }),
 });
 
@@ -62,4 +71,6 @@ export const {
     useGetCombosQuery,
     useGetCouponsQuery,
     useGetSettingsQuery,
+    useGetHomeDataQuery,
+    useGetSlidersQuery,
 } = productApi;

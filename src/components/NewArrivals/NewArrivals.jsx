@@ -1,42 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import solitaireRingImage from "../../assets/images/brading-image.png";
-import statementRingImage from "../../assets/images/brading-image2.png";
+import { useGetHomeDataQuery } from "../../store/api/productApi";
 import "./NewArrivals.css";
 
 const campaignDuration = 36 * 24 * 60 * 60 + 18 * 60 * 60 + 57 * 60 + 43;
 
-const arrivals = [
-    {
-        category: "Rings",
-        name: "Classic Diamond Solitaire Ring",
-        price: 24999,
-        originalPrice: 32999,
-        discount: 24,
-        rating: "4.9",
-        reviews: 12,
-        description: "A timeless solitaire, crafted to bring a little brilliance to every special moment.",
-        image: solitaireRingImage,
-        imageAlt: "Diamond solitaire ring",
-        href: "/rings",
-    },
-    {
-        category: "Rings",
-        name: "Signature Brilliant Cut Ring",
-        price: 18999,
-        originalPrice: 21999,
-        discount: 14,
-        rating: "4.8",
-        reviews: 9,
-        description: "An elegant statement design made to add a touch of sparkle to your everyday.",
-        image: statementRingImage,
-        imageAlt: "Brilliant cut statement ring",
-        href: "/rings",
-    },
-];
-
 function formatPrice(price) {
-    return `₹${price.toLocaleString("en-IN")}`;
+    return `₹${Number(price).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 }
 
 function formatTime(seconds) {
@@ -50,6 +20,7 @@ function formatTime(seconds) {
 }
 
 function NewArrivals() {
+    const { data: homeData, isLoading } = useGetHomeDataQuery();
     const [remainingSeconds, setRemainingSeconds] = useState(campaignDuration);
 
     useEffect(() => {
@@ -61,6 +32,15 @@ function NewArrivals() {
     }, []);
 
     const countdown = formatTime(remainingSeconds);
+    const arrivals = (homeData?.data?.new_arrivals || []).slice(0, 2);
+
+    if (isLoading && arrivals.length === 0) {
+        return null;
+    }
+
+    if (arrivals.length === 0) {
+        return null;
+    }
 
     return (
         <section className="new-arrivals" aria-labelledby="new-arrivals-title">
@@ -70,49 +50,67 @@ function NewArrivals() {
             </div>
 
             <div className="new-arrivals__grid">
-                {arrivals.map((product) => (
-                    <article className="new-arrival-card" key={product.name}>
-                        <Link
-                            className="new-arrival-card__image"
-                            to={product.href}
-                            aria-label={`Explore ${product.name}`}
-                        >
-                            <img src={product.image} alt={product.imageAlt} />
-                            <span className="new-arrival-card__discount">{product.discount}% OFF</span>
-                        </Link>
+                {arrivals.map((product) => {
+                    const price = Number(product.price) || 0;
+                    const regularPrice = Number(product.regular_price || product.base_price || product.price) || 0;
+                    const discount = product.discount_percentage || (regularPrice > price ? Math.round(((regularPrice - price) / regularPrice) * 100) : 0);
+                    const category = product.category?.name || "Jewellery";
+                    const image = product.primary_image || product.images?.[0] || "";
+                    const description = product.short_description || product.description || "";
+                    const rating = product.rating || "5.0";
+                    const reviews = product.reviews_count || product.review_count || 0;
+                    const href = `/product/${product.slug}`;
 
-                        <div className="new-arrival-card__details">
-                            <span className="new-arrival-card__category">{product.category}</span>
-                            <h3>
-                                <Link to={product.href}>{product.name}</Link>
-                            </h3>
+                    return (
+                        <article className="new-arrival-card" key={product.id || product.slug}>
+                            <Link
+                                className="new-arrival-card__image"
+                                to={href}
+                                aria-label={`Explore ${product.name}`}
+                            >
+                                <img src={image} alt={product.name} />
+                                {discount > 0 && (
+                                    <span className="new-arrival-card__discount">{discount}% OFF</span>
+                                )}
+                            </Link>
 
-                            <div className="new-arrival-card__price">
-                                <strong>{formatPrice(product.price)}</strong>
-                                <del>{formatPrice(product.originalPrice)}</del>
-                            </div>
+                            <div className="new-arrival-card__details">
+                                <span className="new-arrival-card__category">{category}</span>
+                                <h3>
+                                    <Link to={href}>{product.name}</Link>
+                                </h3>
 
-                            <p className="new-arrival-card__rating">
-                                <span aria-hidden="true">★</span>
-                                <strong>{product.rating}</strong>
-                                <span>{product.reviews} Reviews</span>
-                            </p>
-
-                            <p className="new-arrival-card__description">{product.description}</p>
-
-                            <div className="new-arrival-card__countdown" aria-label="Campaign expiration countdown">
-                                <div className="new-arrival-card__time">
-                                    {countdown.map((part, index) => (
-                                        <span className="new-arrival-card__time-part" key={`${product.name}-${index}`}>
-                                            {part}
-                                        </span>
-                                    ))}
+                                <div className="new-arrival-card__price">
+                                    <strong>{formatPrice(price)}</strong>
+                                    {regularPrice > price && (
+                                        <del>{formatPrice(regularPrice)}</del>
+                                    )}
                                 </div>
-                                <span className="new-arrival-card__countdown-label">Campaign expiration date</span>
+
+                                <p className="new-arrival-card__rating">
+                                    <span aria-hidden="true">★</span>
+                                    <strong>{rating}</strong>
+                                    <span>{reviews} Reviews</span>
+                                </p>
+
+                                {description && (
+                                    <p className="new-arrival-card__description">{description}</p>
+                                )}
+
+                                <div className="new-arrival-card__countdown" aria-label="Campaign expiration countdown">
+                                    <div className="new-arrival-card__time">
+                                        {countdown.map((part, index) => (
+                                            <span className="new-arrival-card__time-part" key={`${product.id}-${index}`}>
+                                                {part}
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <span className="new-arrival-card__countdown-label">Campaign expiration date</span>
+                                </div>
                             </div>
-                        </div>
-                    </article>
-                ))}
+                        </article>
+                    );
+                })}
             </div>
         </section>
     );

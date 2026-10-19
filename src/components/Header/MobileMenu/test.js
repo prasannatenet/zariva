@@ -14,7 +14,7 @@
  *  ---------------------------------------------------------------------------
  *  LIVE ENDPOINTS
  *  ---------------------------------------------------------------------------
- *      Base URL   https://astroemerging.com/gehna/api/v1
+ *      Base URL   https://vasuhjewels.com/api/v1
  *
  *  To point this same file at a different environment (staging, or a local
  *  php artisan serve) set the global BEFORE the module loads:
@@ -84,7 +84,7 @@
  *
  */
 const GEHNA_API_BASE = String(
-  globalThis.GEHNA_API_BASE ?? 'https://astroemerging.com/gehna/api/v1',
+  globalThis.GEHNA_API_BASE ?? 'https://vasuhjewels.com/api/v1',
 ).replace(/\/+$/, '');
 const TOKEN_KEY = 'gehna_api_token';
 /* -------------------------------------------------------------------------- */
