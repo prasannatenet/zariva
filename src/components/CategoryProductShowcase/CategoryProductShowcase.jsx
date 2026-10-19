@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { useAddToCartMutation } from "../../store/api/authApi";
+import { addLocalCartItem } from "../../store/slices/cartSlice";
 import Button from "../Button/Button";
 import "./CategoryProductShowcase.css";
 
@@ -8,6 +10,8 @@ function CategoryProductShowcase({ products = [], categoryName = "Jewellery" }) 
     const [selectedIndex, setSelectedIndex] = useState(null);
     const [feedback, setFeedback] = useState(null);
     const railRef = useRef(null);
+    const dispatch = useDispatch();
+    const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
     const [addToCart, { isLoading }] = useAddToCartMutation();
     const featuredIndex = selectedIndex ?? Math.max(0, products.findIndex((product) => product.in_stock));
 
@@ -31,6 +35,12 @@ function CategoryProductShowcase({ products = [], categoryName = "Jewellery" }) 
 
     const handleAddToCart = async () => {
         setFeedback(null);
+
+        if (!isAuthenticated) {
+            dispatch(addLocalCartItem({ product: selectedProduct, quantity: 1 }));
+            setFeedback({ type: "success", message: "Added to your cart." });
+            return;
+        }
 
         try {
             await addToCart({ product_id: selectedProduct.id, quantity: 1 }).unwrap();

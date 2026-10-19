@@ -539,7 +539,7 @@
     background: #fff;
     color: #253052;
     font: inherit;
-    font-size: 1.25rem;
+    font-size: 15px;
 }
 
 .product-detail__pincode-controls input:focus {
@@ -604,6 +604,7 @@ margin: 0;
 .product-detail__coupon-list {
     display: flex;
     gap: 15px;
+    overflow: auto;
 }
 
 .product-detail__coupon {
@@ -616,6 +617,7 @@ margin: 0;
     background: #00800014;
     position: relative;
     flex: 1;
+    min-width: 320px;
 }
 
 .product-detail__coupon::before {
@@ -1447,9 +1449,13 @@ label.product-bundle__item {
         gap: 0.8rem;
     }
 
-    .trustBar {
+    .product-detail__gallery-layout .trustBar {
         grid-column: 1 / -1;
     }
+
+    .product-detail__purchase { flex-direction: column;}
+
+    .trustBar  { flex-direction: column; }
 }
 
 .trustBar {

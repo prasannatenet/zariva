@@ -37,7 +37,7 @@
     display: inline-block;
     margin-bottom: 1.4rem;
     color: #373737;
-    font-size: 1.1rem;
+    font-size: 13px;
     font-weight: 500;
     letter-spacing: 0.04em;
 }
@@ -129,6 +129,7 @@
     .card-spread__layout {
         grid-template-columns: 1fr;
         gap: 2.4rem;
+        padding: 0;
     }
 
     .card-spread__image {

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useLoginMutation, useRegisterMutation,} from "../../store/api/authApi";
+import { useAddToCartMutation, useLoginMutation, useRegisterMutation } from "../../store/api/authApi";
 import { setUser } from "../../store/slices/authSlice";
+import { removeLocalCartItem } from "../../store/slices/cartSlice";
 import logo from "../../assets/images/logo.png";
 import Button from "../Button/Button";
 import "./AuthModal.css";
@@ -12,9 +13,11 @@ function AuthModal({ mode }) {
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
+    const localCart = useSelector((state) => state.cart);
     const closeDestination = location.state?.backgroundLocation || "/";
     const [login, loginState] = useLoginMutation();
     const [register, registerState] = useRegisterMutation();
+    const [addToCart] = useAddToCartMutation();
     const [form, setForm] = useState({
         name: "",
         email: "",
@@ -65,15 +68,11 @@ function AuthModal({ mode }) {
             return;
         }
 
+        let response;
         try {
-            const response = isRegister
+            response = isRegister
                 ? await register(form).unwrap()
                 : await login({ email: form.email, password: form.password }).unwrap();
-            const { token, user } = response.data;
-
-            localStorage.setItem("gehna_api_token", token);
-            dispatch(setUser(user));
-            navigate(closeDestination);
         } catch {
             setValidationMessage(
                 activeRequest.error?.data?.message ||
@@ -81,7 +80,30 @@ function AuthModal({ mode }) {
                         ? "We couldn't create your account. Please check your details."
                         : "We couldn't sign you in. Check your email and password."),
             );
+            return;
         }
+
+        const { token, user } = response.data;
+        localStorage.setItem("gehna_api_token", token);
+        dispatch(setUser(user));
+
+        for (const item of localCart) {
+            try {
+                await addToCart({
+                    product_id: item.product_id,
+                    quantity: item.quantity,
+                    ...(item.combo_id != null ? { combo_id: item.combo_id } : {}),
+                }).unwrap();
+                dispatch(removeLocalCartItem(item.id));
+            } catch (error) {
+                setValidationMessage(
+                    error.data?.message || "You're signed in, but we couldn't sync your saved cart. Submit again to retry.",
+                );
+                return;
+            }
+        }
+
+        navigate(closeDestination);
     };
 
     return (

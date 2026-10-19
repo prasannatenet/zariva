@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import Button from "../Button/Button";
 import { useAddToCartMutation } from "../../store/api/authApi";
+import { addLocalCartItem } from "../../store/slices/cartSlice";
 import { toggleWishlistItem } from "../../store/slices/wishlistSlice";
 import "./ProductCard.css";
 
@@ -21,6 +22,7 @@ const ProductCard = ({ product, imageMode = "hover" }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
+    const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
     const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
     const isWishlisted = useSelector((state) => state.wishlist.some(
         (item) => String(item.id ?? item.slug) === String(product.id ?? product.slug)
@@ -122,6 +124,17 @@ const ProductCard = ({ product, imageMode = "hover" }) => {
     };
 
     const handleAddToCart = async () => {
+        if (!isAuthenticated) {
+            dispatch(addLocalCartItem({ product, quantity: 1 }));
+            showToast({
+                icon: "add_shopping_cart",
+                title: "Added to cart",
+                message: product.name,
+                type: "success",
+            });
+            return;
+        }
+
         try {
             await addToCart({ product_id: product.id, quantity: 1 }).unwrap();
             showToast({

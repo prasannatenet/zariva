@@ -23,6 +23,7 @@ function Home() {
         <>
             {/* Hero Slider */}
             <Hero />
+            <VideoGallery products={products} />
             <Category />
             <NewArrivals />
             <HotOffer />
@@ -42,14 +43,14 @@ function Home() {
                     </div>
                     <Swiper
                         modules={[Navigation]}
-                        slidesPerView={1.2}
+                        slidesPerView={1}
                         spaceBetween={16}
                         navigation={{
                             prevEl: ".latest-collection__arrow--prev",
                             nextEl: ".latest-collection__arrow--next",
                         }}
                         breakpoints={{
-                            576: { slidesPerView: 2, spaceBetween: 16 },
+                            576: { slidesPerView: 1, spaceBetween: 16 },
                             768: { slidesPerView: 3, spaceBetween: 18 },
                             1024: { slidesPerView: 4, spaceBetween: 20 },
                         }}
@@ -80,16 +81,7 @@ function Home() {
                                 type="button"
                                 className="best-seller__arrow best-seller__arrow--prev"
                                 aria-label="Previous products"
-                                style={{
-                                    display: "grid",
-                                    placeItems: "center",
-                                    width: "3.6rem",
-                                    height: "3.6rem",
-                                    border: "1px solid rgba(16, 28, 53, 0.18)",
-                                    background: "#fff",
-                                    color: "var(--p-900)",
-                                    cursor: "pointer",
-                                }}
+                                
                             >
                                 <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
                             </button>
@@ -97,16 +89,7 @@ function Home() {
                                 type="button"
                                 className="best-seller__arrow best-seller__arrow--next"
                                 aria-label="Next products"
-                                style={{
-                                    display: "grid",
-                                    placeItems: "center",
-                                    width: "3.6rem",
-                                    height: "3.6rem",
-                                    border: "1px solid rgba(16, 28, 53, 0.18)",
-                                    background: "#fff",
-                                    color: "var(--p-900)",
-                                    cursor: "pointer",
-                                }}
+
                             >
                                 <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                             </button>
@@ -115,7 +98,7 @@ function Home() {
 
                     <Swiper
                         modules={[Navigation]}
-                        slidesPerView={1.2}
+                        slidesPerView={1}
                         spaceBetween={16}
                         navigation={{
                             prevEl: ".best-seller__arrow--prev",
@@ -137,7 +120,7 @@ function Home() {
             </section>
 
             <CardSpread />
-            <VideoGallery products={products} />
+            
             <InstagramSection products={products} />
 
         </>

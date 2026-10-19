@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import {
     useGetCartQuery,
     useRemoveCartItemMutation,
     useUpdateCartItemMutation,
 } from "../../../store/api/authApi";
+import { removeLocalCartItem, updateLocalCartItem } from "../../../store/slices/cartSlice";
 import { useGetCombosQuery } from "../../../store/api/productApi";
 import Button from "../../Button/Button";
 import "./Cart.css";
@@ -40,21 +42,36 @@ const getStockLimit = (item, product, combo) => {
 
 function Cart() {
     const navigate = useNavigate();
-    const { data, isLoading, isError, error, refetch } = useGetCartQuery();
+    const dispatch = useDispatch();
+    const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+    const localCart = useSelector((state) => state.cart);
+    const {
+        data: serverData,
+        isLoading: isServerLoading,
+        isError: isServerError,
+        error,
+        refetch,
+    } = useGetCartQuery(undefined, { skip: !isAuthenticated });
     const { data: combosData } = useGetCombosQuery();
     const [cartFeedback, setCartFeedback] = useState(null);
-    const [updateCartItem, { isLoading: isUpdating }] = useUpdateCartItemMutation();
-    const [removeCartItem, { isLoading: isRemoving }] = useRemoveCartItemMutation();
+    const [updateCartItemRequest, { isLoading: isUpdating }] = useUpdateCartItemMutation();
+    const [removeCartItemRequest, { isLoading: isRemoving }] = useRemoveCartItemMutation();
 
-    const cart = data?.data?.cart ?? data?.data ?? data;
+    const data = isAuthenticated ? serverData : null;
+    const isLoading = isAuthenticated && isServerLoading;
+    const isError = isAuthenticated && isServerError;
+    const cart = isAuthenticated ? (data?.data?.cart ?? data?.data ?? data) : localCart;
     const items = Array.isArray(cart)
         ? cart
         : cart?.items ?? cart?.cart_items ?? cart?.products ?? [];
     const cartMeta = data?.meta ?? cart?.meta ?? {};
-    const subtotal = Number(cartMeta.subtotal ?? cart?.subtotal ?? 0);
+    const subtotal = Number(cartMeta.subtotal ?? cart?.subtotal ?? items.reduce(
+        (sum, item) => sum + Number(item.line_total ?? item.total ?? Number(item.price ?? 0) * Number(item.quantity ?? 1)),
+        0
+    ));
     const total = Number(cartMeta.total ?? cart?.total ?? subtotal);
     const shipping = cartMeta.shipping ?? cartMeta.shipping_fee ?? cart?.shipping ?? cart?.shipping_fee;
-    const requiresLogin = error?.status === 401;
+    const requiresLogin = isAuthenticated && error?.status === 401;
     const totalQuantity = Number(cartMeta.count ?? cart?.count ?? items.reduce(
         (total, item) => total + Number(item.quantity ?? item.qty ?? 1),
         0
@@ -64,8 +81,13 @@ function Cart() {
         if (cartItemId == null) return;
 
         setCartFeedback(null);
+        if (!isAuthenticated) {
+            dispatch(updateLocalCartItem({ id: cartItemId, quantity }));
+            return;
+        }
+
         try {
-            await updateCartItem({ cartItemId, quantity }).unwrap();
+            await updateCartItemRequest({ cartItemId, quantity }).unwrap();
         } catch (updateError) {
             setCartFeedback({
                 type: "error",
@@ -82,8 +104,13 @@ function Cart() {
         if (cartItemId == null) return;
 
         setCartFeedback(null);
+        if (!isAuthenticated) {
+            dispatch(removeLocalCartItem(cartItemId));
+            return;
+        }
+
         try {
-            await removeCartItem(cartItemId).unwrap();
+            await removeCartItemRequest(cartItemId).unwrap();
         } catch (removeError) {
             setCartFeedback({
                 type: "error",

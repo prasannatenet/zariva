@@ -193,7 +193,8 @@ backdrop-filter: blur(5px);
 
 @media (max-width: 575.98px) {
   .category-section {
-    padding: 0 20px;
+    padding-right: 20px;
+    padding-left: 20px;
   }
 
   .category-header {

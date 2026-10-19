@@ -57,13 +57,11 @@
 }
 
 .instagram-section__profile-copy strong {
-    font-size: 1.4rem;
     font-weight: 500;
 }
 
 .instagram-section__profile-copy > span {
     color: #6c6b66;
-    font-size: 1.1rem;
 }
 
 .instagram-section__follow {
@@ -296,7 +294,7 @@
     padding: 2.4rem 0.8rem 0.8rem;
     background: linear-gradient(transparent, rgb(16 28 53 / 72%));
     color: #fff;
-    font-size: 1rem;
+    font-size: 15px;
     opacity: 0;
     transition: opacity 200ms ease;
 }
@@ -366,7 +364,6 @@
 
     .instagram-section__profile-copy > span {
         max-width: 18rem;
-        font-size: 1rem;
     }
 
     .instagram-section__follow {

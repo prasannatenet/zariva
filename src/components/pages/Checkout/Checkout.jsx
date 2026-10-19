@@ -114,9 +114,24 @@ function Checkout() {
     const summary = summaryResponse?.data;
     const pricing = summary?.pricing;
     const paymentProviders = summary?.payment_providers ?? {};
-    const enabledPaymentMethods = Object.entries(paymentProviders)
-        .filter(([, provider]) => provider?.enabled)
-        .map(([method]) => method);
+    const paymentOptions = [
+        {
+            method: "cod",
+            title: "Cash on Delivery",
+            description: "Pay when your order arrives",
+        },
+        {
+            method: "razorpay",
+            title: "Pay Online",
+            description: "UPI, credit/debit cards and netbanking",
+        },
+    ].map((option) => ({
+        ...option,
+        enabled: Boolean(paymentProviders[option.method]?.enabled),
+    }));
+    const enabledPaymentMethods = paymentOptions
+        .filter((option) => option.enabled)
+        .map(({ method }) => method);
     const paymentMethod = enabledPaymentMethods.includes(paymentMethodChoice)
         ? paymentMethodChoice
         : enabledPaymentMethods.includes("cod")
@@ -347,7 +362,7 @@ function Checkout() {
                 ) : requiresLogin ? (
                     <div className="checkout-page__notice" role="alert">
                         <h2>Sign in to continue</h2>
-                        <p>Your cart is linked to your account. Sign in to see your items and continue checkout.</p>
+                        <p>Your cart is linked to your account. Sign in to see your items and the payment methods available for this order, including Cash on Delivery or online payment when enabled.</p>
                         <Link to="/login" state={{ backgroundLocation: { pathname: "/checkout", search: "", hash: "" } }}>
                             Sign in
                         </Link>
@@ -421,20 +436,22 @@ function Checkout() {
 
                             <fieldset className="checkout-page__payment">
                                 <legend>Payment method</legend>
-                                {enabledPaymentMethods.length === 0 ? (
-                                    <p className="checkout-page__message">No payment methods are currently available. Please try again later.</p>
-                                ) : enabledPaymentMethods.map((method) => (
-                                    <label className="checkout-page__payment-option" key={method}>
+                                {paymentOptions.map(({ method, title, description, enabled }) => (
+                                    <label
+                                        className={`checkout-page__payment-option${enabled ? "" : " is-unavailable"}`}
+                                        key={method}
+                                    >
                                         <input
                                             type="radio"
                                             name="payment_method"
                                             value={method}
                                             checked={paymentMethod === method}
+                                            disabled={!enabled}
                                             onChange={() => setPaymentMethodChoice(method)}
                                         />
                                         <span>
-                                            <strong>{paymentProviders[method]?.name ?? (method === "cod" ? "Cash on Delivery" : "Razorpay")}</strong>
-                                            <small>{method === "cod" ? "Pay when your order arrives" : "Pay securely online"}</small>
+                                            <strong>{title}</strong>
+                                            <small>{enabled ? description : "Online payments are not enabled right now"}</small>
                                         </span>
                                     </label>
                                 ))}

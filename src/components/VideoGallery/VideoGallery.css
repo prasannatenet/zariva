@@ -2,7 +2,7 @@
     position: relative;
     width: 100%;
     margin: 0 auto 6rem;
-    padding: 0;
+    padding: 5rem 0 0;
 }
 
 .video-gallery__heading {
@@ -22,7 +22,7 @@
     margin: 0;
     color: var(--p-900);
     font-family: var(--primary-font);
-    font-size: clamp(1.8rem, 2vw, 2.2rem);
+    font-size: clamp(20px, 2vw, 2.2rem);
     font-weight: 600;
     line-height: 1;
     text-transform: uppercase;
@@ -492,6 +492,10 @@
     .video-gallery__controls .video-gallery__control-button {
         width: 3.4rem;
         height: 3.4rem;
+    }
+
+    .video-gallery__card {
+        flex-basis: 100%;
     }
 
     .video-gallery__modal-backdrop {

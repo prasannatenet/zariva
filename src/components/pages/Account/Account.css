@@ -15,7 +15,7 @@
     gap: 1rem;
     margin-bottom: 3rem;
     color: #858780;
-    font-size: 1.2rem;
+    
 }
 
 .account-breadcrumb a {
@@ -82,7 +82,7 @@
 .account-identity strong {
     overflow: hidden;
     color: #222721;
-    font-size: 1.4rem;
+    
     font-weight: 500;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -91,7 +91,7 @@
 .account-identity__email {
     overflow: hidden;
     color: #858780;
-    font-size: 1.1rem;
+    
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -115,7 +115,7 @@
     color: #656963;
     cursor: pointer;
     font: inherit;
-    font-size: 1.3rem;
+    font-size: 14px;
     text-align: left;
     transition: background 160ms ease, color 160ms ease;
 }
@@ -147,7 +147,7 @@
     border-radius: 2rem;
     background: #fff;
     color: #565b55;
-    font-size: 1.1rem;
+    
 }
 
 .account-signout {
@@ -195,7 +195,7 @@
 .account-page-heading p {
     margin: 0;
     color: #73766f;
-    font-size: 1.4rem;
+    
 }
 
 .account-rewards {
@@ -231,7 +231,7 @@
 .account-rewards__copy p {
     margin: 0;
     color: rgba(255, 253, 248, 0.72);
-    font-size: 1.3rem;
+    
 }
 
 .account-rewards__balance {
@@ -255,7 +255,7 @@
 
 .account-rewards__balance > span:last-child {
     color: rgba(255, 253, 248, 0.72);
-    font-size: 1.1rem;
+    
 }
 
 .account-rewards__watermark {
@@ -291,7 +291,7 @@
 
 .account-stat > span {
     color: #777a74;
-    font-size: 1.2rem;
+    
 }
 
 .account-stat > strong {
@@ -306,7 +306,7 @@
     align-items: center;
     gap: 0.7rem;
     font-family: var(--body-font);
-    font-size: 1.4rem;
+    
 }
 
 .account-stat__status i {
@@ -354,7 +354,7 @@
     background: #eeece5;
     color: #686a63;
     font-family: var(--body-font);
-    font-size: 1.1rem;
+    
 }
 
 .account-section__heading button {
@@ -367,7 +367,7 @@
     color: #51482f;
     cursor: pointer;
     font: inherit;
-    font-size: 1.2rem;
+    
 }
 
 .account-section__heading button .material-symbols-outlined {
@@ -394,13 +394,13 @@
 
 .account-details-grid > div > span {
     color: #858780;
-    font-size: 1.1rem;
+    
 }
 
 .account-details-grid > div > strong {
     overflow-wrap: anywhere;
     color: #353932;
-    font-size: 1.3rem;
+    
     font-weight: 500;
 }
 
@@ -415,7 +415,7 @@
     padding-top: 2rem;
     border-top: 1px solid #eeece6;
     color: #777a74;
-    font-size: 1.3rem;
+    
 }
 
 .account-text-link,
@@ -425,7 +425,7 @@
     gap: 0.5rem;
     margin-top: 1.4rem;
     color: #51482f;
-    font-size: 1.3rem;
+    
     text-decoration: underline;
     text-underline-offset: 0.3rem;
 }
@@ -499,7 +499,7 @@
 
 .account-wishlist-item__copy > span {
     color: #777a74;
-    font-size: 1.2rem;
+    
 }
 
 .account-icon-button {
@@ -557,7 +557,7 @@
     max-width: 38rem;
     margin: 0.7rem 0 0;
     color: #777a74;
-    font-size: 1.3rem;
+    
 }
 
 .account-empty--inline p {
@@ -631,7 +631,6 @@
         gap: 0.7rem;
         min-height: 4rem;
         padding: 0 1rem;
-        font-size: 1.2rem;
         white-space: nowrap;
     }
 
@@ -685,16 +684,14 @@
         padding: 1rem;
     }
 
-    .account-stat > span {
-        font-size: 1.05rem;
-    }
+
 
     .account-stat > strong {
         font-size: 1.8rem;
     }
 
     .account-stat > .account-stat__status {
-        font-size: 1.2rem;
+        
     }
 
     .account-section__heading h2 {
@@ -762,7 +759,7 @@
     .account-section__heading button {
         flex: 0 0 auto;
         margin-top: 1rem;
-        font-size: 1.1rem;
+        
     }
 
     .account-details-grid {

@@ -74,7 +74,7 @@ function MobileMenu({ isOpen, onClose, categories }) {
                 </div>
 
                 <div className="mobile-menu__actions">
-                    <HeaderActions />
+                    <HeaderActions showAccount={false} />
                 </div>
 
             </aside>

@@ -6,9 +6,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { useGetCartQuery, useLogoutMutation } from "../../../store/api/authApi";
 import { clearUser } from "../../../store/slices/authSlice";
 import { removeWishlistItem, WISHLIST_STORAGE_KEY } from "../../../store/slices/wishlistSlice";
+import { CART_STORAGE_KEY } from "../../../store/slices/cartSlice";
 import WishlistDrawer from "../WishlistDrawer/WishlistDrawer";
 
-function HeaderActions() {
+function HeaderActions({ accountOnly = false, showAccount = true }) {
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
@@ -21,9 +22,11 @@ function HeaderActions() {
         (state) => state.auth
     );
     const wishlist = useSelector((state) => state.wishlist);
+    const localCart = useSelector((state) => state.cart);
     const { data: cartData } = useGetCartQuery(undefined, { skip: !isAuthenticated });
     const cart = cartData?.data?.cart ?? cartData?.data ?? cartData;
-    const cartCount = Number(cartData?.meta?.count ?? cart?.meta?.count ?? cart?.count ?? 0);
+    const cartCount = Number(cartData?.meta?.count ?? cart?.meta?.count ?? cart?.count
+        ?? localCart.reduce((count, item) => count + Number(item.quantity || 0), 0));
 
     const [logout, { isLoading: isLoggingOut }] =
         useLogoutMutation();
@@ -31,6 +34,10 @@ function HeaderActions() {
     useEffect(() => {
         localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlist));
     }, [wishlist]);
+
+    useEffect(() => {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(localCart));
+    }, [localCart]);
 
     const handleAccountClick = () => {
         if (isAuthenticated) {
@@ -85,45 +92,47 @@ function HeaderActions() {
 
     return (
         <>
-            {/* Wishlist */}
-            <button
-                title="Wishlist"
-                type="button"
-                aria-label="Wishlist"
-                className="header-wishlist"
-                aria-expanded={isWishlistOpen}
-                aria-controls="wishlist-drawer"
-                onClick={() => setIsWishlistOpen(true)}
-            >
-                <svg
-                    width="25"
-                    height="26"
-                    viewBox="0 0 25 26"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <path
-                        d="M15.0002 23.5C18.6668 20.5 24.5001 13.5 24.5002 9.5C24.5002 4.27984 19.0002 1.5 13.5002 6L16.0001 9C14.3335 6.33333 9.80017 1.8 5.00017 5C0.20017 8.2 2.3335 13.3333 4.00017 15.5C5.83349 17.5 9.70012 21.4 10.5001 21"
-                        strokeLinecap="round"
+            {!accountOnly && (
+                <>
+                    <button
+                        title="Wishlist"
+                        type="button"
+                        aria-label="Wishlist"
+                        className="header-wishlist"
+                        aria-expanded={isWishlistOpen}
+                        aria-controls="wishlist-drawer"
+                        onClick={() => setIsWishlistOpen(true)}
+                    >
+                        <svg
+                            width="25"
+                            height="26"
+                            viewBox="0 0 25 26"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M15.0002 23.5C18.6668 20.5 24.5001 13.5 24.5002 9.5C24.5002 4.27984 19.0002 1.5 13.5002 6L16.0001 9C14.3335 6.33333 9.80017 1.8 5.00017 5C0.20017 8.2 2.3335 13.3333 4.00017 15.5C5.83349 17.5 9.70012 21.4 10.5001 21"
+                                strokeLinecap="round"
+                            />
+                        </svg>
+                        {wishlist.length > 0 && (
+                            <span className="header-wishlist__count" aria-hidden="true">
+                                {wishlist.length > 99 ? "99+" : wishlist.length}
+                            </span>
+                        )}
+                    </button>
+
+                    <WishlistDrawer
+                        isOpen={isWishlistOpen}
+                        onClose={() => setIsWishlistOpen(false)}
+                        onRemove={(productKey) => dispatch(removeWishlistItem(productKey))}
                     />
-                </svg>
-                {wishlist.length > 0 && (
-                    <span className="header-wishlist__count" aria-hidden="true">
-                        {wishlist.length > 99 ? "99+" : wishlist.length}
-                    </span>
-                )}
-            </button>
-
-            <WishlistDrawer
-                isOpen={isWishlistOpen}
-                onClose={() => setIsWishlistOpen(false)}
-                onRemove={(productKey) => dispatch(removeWishlistItem(productKey))}
-            />
-
-            <div className="divider"></div>
+                    {showAccount && <div className="divider"></div>}
+                </>
+            )}
 
             {/* Account */}
-            <div className="account-menu" ref={accountMenuRef}>
+            {showAccount && <div className="account-menu" ref={accountMenuRef}>
                 <button
                     ref={accountButtonRef}
                     title={isAuthenticated ? user?.name : "My Account"}
@@ -209,12 +218,12 @@ function HeaderActions() {
                         </button>
                     </div>
                 )}
-            </div>
+            </div>}
 
-            <div className="divider"></div>
+            {!accountOnly && <div className="divider"></div>}
 
             {/* Cart */}
-            <button
+            {!accountOnly && <button
                 title={cartCount ? `Cart (${cartCount})` : "Cart"}
                 type="button"
                 aria-label={cartCount ? `Cart, ${cartCount} items` : "Cart"}
@@ -246,7 +255,7 @@ function HeaderActions() {
                         {cartCount > 99 ? "99+" : cartCount}
                     </span>
                 )}
-            </button>
+            </button>}
         </>
     );
 }

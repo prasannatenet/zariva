@@ -95,6 +95,8 @@ display: grid;
         gap: 2.4rem;
         margin: 3.5rem auto;
         padding: 2.4rem 2rem;
+        background: none;
+        background-color: #f1edea;
     }
 
     .hot-offer__timer-wrap {

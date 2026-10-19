@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useGetCombosQuery, useGetCouponsQuery, useGetProductQuery, useGetSettingsQuery } from "../../../store/api/productApi";
 import { useAddToCartMutation, useGetCartQuery } from "../../../store/api/authApi";
 import { toggleWishlistItem } from "../../../store/slices/wishlistSlice";
+import { addLocalCartItem } from "../../../store/slices/cartSlice";
 import "./ProductDetail.css";
 import Button from "../../../components/Button/Button";
 import ProductReviews from "./ProductReviews";
@@ -333,10 +334,15 @@ function ProductDetail() {
 
         try {
             for (const item of items) {
-                await addToCart({
-                    product_id: item.id,
-                    quantity: item.id === product.id ? quantity : 1,
-                }).unwrap();
+                const itemQuantity = item.id === product.id ? quantity : 1;
+                if (!isAuthenticated) {
+                    dispatch(addLocalCartItem({ product: item, quantity: itemQuantity }));
+                } else {
+                    await addToCart({
+                        product_id: item.id,
+                        quantity: itemQuantity,
+                    }).unwrap();
+                }
                 addedCount += 1;
             }
 
@@ -390,7 +396,11 @@ function ProductDetail() {
         }
 
         try {
-            await addToCart({ product_id: productId, combo_id: combo.id, quantity: 1 }).unwrap();
+            if (!isAuthenticated) {
+                dispatch(addLocalCartItem({ product: combo.products[0], combo, quantity: 1 }));
+            } else {
+                await addToCart({ product_id: productId, combo_id: combo.id, quantity: 1 }).unwrap();
+            }
             setCartFeedback({
                 source: `combo-${combo.id}`,
                 type: "success",

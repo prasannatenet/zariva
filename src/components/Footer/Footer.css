@@ -82,13 +82,18 @@ max-width: 150px;
 .site-footer__column a,
 .site-footer__bottom p {
     color: #aeb4ca;
-    font-size: 13px;
+    font-size: 14px;
     font-style: normal;
     line-height: 1.65;
 }
 
 .site-footer__brand p {
     margin: 1rem 0 0;
+}
+
+.site-footer__brand p a {
+    color: #fff;
+    text-decoration: none;
 }
 
 .site-footer__column h2 {

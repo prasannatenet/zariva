@@ -80,6 +80,9 @@ function Header() {
                             </Link>
                             <div className="header-search-location">
                                 <LocationSelector />
+                                <div className="header-actions mobile-account-actions">
+                                    <HeaderActions accountOnly />
+                                </div>
                                 <Search inline />
                             </div>
 

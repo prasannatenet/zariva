@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import Button from "../../Button/Button";
 import { useAddToCartMutation } from "../../../store/api/authApi";
+import { addLocalCartItem } from "../../../store/slices/cartSlice";
 import "./WishlistDrawer.css";
 
 function WishlistDrawer({ isOpen, onClose, onRemove }) {
     const wishlist = useSelector((state) => state.wishlist);
+    const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+    const dispatch = useDispatch();
     const location = useLocation();
     const [addToCart, { isLoading }] = useAddToCartMutation();
     const [feedback, setFeedback] = useState(null);
@@ -39,6 +42,12 @@ function WishlistDrawer({ isOpen, onClose, onRemove }) {
     const handleAddToCart = async (product) => {
         setFeedback(null);
 
+        if (!isAuthenticated) {
+            dispatch(addLocalCartItem({ product, quantity: 1 }));
+            setFeedback({ productKey: product.id ?? product.slug, type: "success", message: "Added to your cart." });
+            return;
+        }
+
         try {
             await addToCart({ product_id: product.id, quantity: 1 }).unwrap();
             setFeedback({ productKey: product.id ?? product.slug, type: "success", message: "Added to your cart." });
@@ -60,7 +69,11 @@ function WishlistDrawer({ isOpen, onClose, onRemove }) {
 
         for (const product of selectedProducts) {
             try {
-                await addToCart({ product_id: product.id, quantity: 1 }).unwrap();
+                if (!isAuthenticated) {
+                    dispatch(addLocalCartItem({ product, quantity: 1 }));
+                } else {
+                    await addToCart({ product_id: product.id, quantity: 1 }).unwrap();
+                }
                 addedCount += 1;
             } catch (error) {
                 setBulkFeedback({
