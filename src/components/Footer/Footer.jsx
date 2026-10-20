@@ -1,4 +1,13 @@
 import { Link } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+    faFacebookF,
+    faInstagram,
+    faPinterestP,
+    faWhatsapp,
+    faXTwitter,
+    faYoutube,
+} from "@fortawesome/free-brands-svg-icons";
 import { useGetCategoriesQuery } from "../../store/api/categoryApi";
 import { useGetSettingsQuery } from "../../store/api/productApi";
 import "./Footer.css";
@@ -27,20 +36,26 @@ const informationLinks = [
     { label: "Shipping & Return Policies", to: "/shipping-returns" },
 ];
 
-// Map common social platform names to a simple icon character / label
+// Map common social platform names to their brand icon and accessible label.
 const SOCIAL_ICONS = {
-    facebook: { label: "Facebook", char: "f" },
-    instagram: { label: "Instagram", char: "◎" },
-    twitter: { label: "X / Twitter", char: "X" },
-    x: { label: "X", char: "X" },
-    youtube: { label: "YouTube", char: "▶" },
-    pinterest: { label: "Pinterest", char: "p" },
-    whatsapp: { label: "WhatsApp", char: "w" },
+    facebook: { label: "Facebook", icon: faFacebookF },
+    instagram: { label: "Instagram", icon: faInstagram },
+    twitter: { label: "X / Twitter", icon: faXTwitter },
+    x: { label: "X", icon: faXTwitter },
+    youtube: { label: "YouTube", icon: faYoutube },
+    pinterest: { label: "Pinterest", icon: faPinterestP },
+    whatsapp: { label: "WhatsApp", icon: faWhatsapp },
 };
 
 function getSocialMeta(platform) {
     const key = (platform || "").toLowerCase();
     return SOCIAL_ICONS[key] ?? { label: platform, char: platform?.[0]?.toUpperCase() ?? "•" };
+}
+
+function SocialIcon({ meta }) {
+    return meta.icon
+        ? <FontAwesomeIcon icon={meta.icon} aria-hidden="true" />
+        : meta.char;
 }
 
 function FooterLinkColumn({ title, links }) {
@@ -66,7 +81,7 @@ function Footer() {
     const settings = settingsData?.data ?? {};
 
     const logoSrc = settings.logo || fallbackLogo;
-    const siteName = settings.site_name || "Vashu Jewels & Crafts";
+    const siteName = settings.site_name || "Vasuh Jewels & Crafts";
     const description = settings.description || null;
     const phone = settings.phone || null;
     const email = settings.email || null;
@@ -107,7 +122,7 @@ function Footer() {
                 <div className="site-footer__inner">
                     <div className="site-footer__brand">
                         <Link to="/" className="site-footer__logo">
-                            <img src={logoSrc} alt={siteName} />
+                            <img src={fallbackLogo} alt={siteName} />
                         </Link>
                         {description && <p className="site-footer__description">{description}</p>}
                         {address && (
@@ -161,17 +176,17 @@ function Footer() {
                                         target="_blank"
                                         rel="noreferrer"
                                     >
-                                        {meta.char}
+                                        <SocialIcon meta={meta} />
                                     </a>
                                 );
                             })
                         ) : (
                             <>
-                                <a href="https://www.facebook.com" aria-label="Facebook">f</a>
-                                <a href="https://www.instagram.com" aria-label="Instagram">i</a>
-                                <a href="https://twitter.com" aria-label="X">X</a>
-                                <a href="https://www.youtube.com" aria-label="YouTube">▶</a>
-                                <a href="https://www.pinterest.com" aria-label="Pinterest">p</a>
+                                <a href="https://www.facebook.com" aria-label="Facebook"><SocialIcon meta={SOCIAL_ICONS.facebook} /></a>
+                                <a href="https://www.instagram.com" aria-label="Instagram"><SocialIcon meta={SOCIAL_ICONS.instagram} /></a>
+                                <a href="https://twitter.com" aria-label="X"><SocialIcon meta={SOCIAL_ICONS.x} /></a>
+                                <a href="https://www.youtube.com" aria-label="YouTube"><SocialIcon meta={SOCIAL_ICONS.youtube} /></a>
+                                <a href="https://www.pinterest.com" aria-label="Pinterest"><SocialIcon meta={SOCIAL_ICONS.pinterest} /></a>
                             </>
                         )}
                     </div>

@@ -1,7 +1,7 @@
 .header-nav-wrapper {
     width: 100%;
-    background: var(--p-800);
-    border-bottom: 1px solid #f9f9f9;
+    background: #ba7338;
+    
 }
 
 .header-nav  > ul {
@@ -83,7 +83,7 @@
 
 .simple-dropdown {
     position: absolute;
-    top: calc(100% + 16px);
+    top: 100%;
     left: 50%;
     min-width: 18rem;
     padding: 1.5rem 0;

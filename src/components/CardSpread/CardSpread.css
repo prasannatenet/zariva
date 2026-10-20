@@ -75,7 +75,7 @@
     transition: color 200ms ease;
 }
 
-.card-spread__category > span:first-child {
+.card-spread__category>span:first-child {
     font-size: clamp(18px, 2rem, 2.1rem);
     font-weight: 600;
 }
