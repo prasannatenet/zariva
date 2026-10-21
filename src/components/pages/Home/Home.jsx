@@ -28,7 +28,7 @@ function Home() {
             <NewArrivals />
             <HotOffer />
 
-            <section className="latest-collection py-60">
+            <section className="latest-collection pt-60">
                 <div className="container">
                     <div className="home-product-carousel__header">
                         <SectionTitle title="Latest Collection" className="mb-30" />
@@ -64,7 +64,7 @@ function Home() {
                 </div>
             </section>
 
-            <section className="latest-collection py-60">
+            <section className="pt-60">
                 <div className="container">
                     <div
                         style={{

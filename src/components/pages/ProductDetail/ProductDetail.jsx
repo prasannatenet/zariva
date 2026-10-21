@@ -270,8 +270,9 @@ function ProductDetail() {
 
     const handleImageZoom = (event) => {
         const bounds = event.currentTarget.getBoundingClientRect();
-        const x = ((event.clientX - bounds.left) / bounds.width) * 100;
-        const y = ((event.clientY - bounds.top) / bounds.height) * 100;
+        const lensSize = 28;
+        const x = Math.min(100 - lensSize, Math.max(lensSize, ((event.clientX - bounds.left) / bounds.width) * 100));
+        const y = Math.min(100 - lensSize, Math.max(lensSize, ((event.clientY - bounds.top) / bounds.height) * 100));
         setZoomPreview({ src: event.currentTarget.dataset.image, x, y });
     };
 
@@ -533,6 +534,13 @@ function ProductDetail() {
                                                 src={selectedImage}
                                                 alt={`${product.name} view ${selectedMediaIndex + 1}`}
                                             />
+                                            {zoomPreview && (
+                                                <span
+                                                    className="product-detail__zoom-lens"
+                                                    style={{ left: `${zoomPreview.x}%`, top: `${zoomPreview.y}%` }}
+                                                    aria-hidden="true"
+                                                />
+                                            )}
                                             {discount > 0 && (
                                                 <span className="product-detail__image-discount">
                                                     {discount}% OFF

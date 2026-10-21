@@ -155,7 +155,7 @@
 .auth-heading > p {
     margin: 0;
     color: #73777e;
-    font-size: 13px;
+    font-size: 15px;
 }
 
 .auth-form {
@@ -185,7 +185,7 @@
     background: #fff;
     color: var(--p-900);
     font: inherit;
-    font-size: 13px;
+    font-size: 15px;
     transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
@@ -222,7 +222,7 @@
     gap: 5px;
     margin: 20px 0 0;
     color: #70747b;
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .auth-switch button {
@@ -241,7 +241,7 @@
     margin: 26px 0 0;
     color: #a1a09b;
     font-family: var(--secondary-font);
-    font-size: 13px;
+    font-size: 15px;
     text-align: center;
 }
 

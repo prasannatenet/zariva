@@ -5,7 +5,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 3rem;
-    margin: 5rem auto;
+    margin: 5rem auto 0;
     padding: 3.2rem clamp(2.4rem, 5vw, 6rem);
     background: #f1edea url("../../assets/images/ad-image.png") no-repeat right;
 }

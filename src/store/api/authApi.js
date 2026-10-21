@@ -117,6 +117,7 @@ export const authApi = createApi({
                 url: "/checkout/summary",
                 params,
             }),
+            providesTags: ["Cart"],
         }),
         placeOrder: builder.mutation({
             query: (order) => ({

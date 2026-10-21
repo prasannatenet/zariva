@@ -7,6 +7,7 @@ import {
     useGetCheckoutSummaryQuery,
     useLazyGetPaymentStatusQuery,
     usePlaceOrderMutation,
+    useUpdateCartItemMutation,
     useVerifyRazorpayMutation,
 } from "../../../store/api/authApi";
 import { useGetCouponsQuery } from "../../../store/api/productApi";
@@ -64,6 +65,29 @@ function getErrorMessage(error, fallback) {
     return firstValidationError || error?.data?.message || error?.message || fallback;
 }
 
+function getStockLimit(item, product) {
+    const directStock = item.stock_quantity
+        ?? item.available_quantity
+        ?? item.available_stock
+        ?? product.stock_quantity;
+
+    if (directStock != null && Number.isFinite(Number(directStock))) {
+        return Math.max(0, Number(directStock));
+    }
+
+    const comboProducts = product.products ?? product.items ?? [];
+    if (comboProducts.length > 0) {
+        const componentStocks = comboProducts.map((component) =>
+            component.stock_quantity ?? component.available_quantity
+        );
+        if (componentStocks.every((stock) => stock != null && Number.isFinite(Number(stock)))) {
+            return Math.max(0, Math.min(...componentStocks.map(Number)));
+        }
+    }
+
+    return null;
+}
+
 function Checkout() {
     const navigate = useNavigate();
     const user = useSelector((state) => state.auth.user);
@@ -71,6 +95,7 @@ function Checkout() {
     const { data: couponsData, isLoading: areCouponsLoading, isError: areCouponsError } = useGetCouponsQuery();
     const [applyCoupon, { isLoading: isApplyingCoupon }] = useApplyCouponMutation();
     const [placeOrderRequest] = usePlaceOrderMutation();
+    const [updateCartItemRequest, { isLoading: isUpdatingCart }] = useUpdateCartItemMutation();
     const [verifyRazorpay] = useVerifyRazorpayMutation();
     const [getPaymentStatus] = useLazyGetPaymentStatusQuery();
 
@@ -148,10 +173,10 @@ function Checkout() {
     const userCoinBalance = Number(summary?.user_coins?.balance ?? 0);
 
     useEffect(() => {
-        if (summary?.checkout_token && !checkoutTokenRef.current) {
+        if (summary?.checkout_token && !isSummaryFetching) {
             checkoutTokenRef.current = summary.checkout_token;
         }
-    }, [summary?.checkout_token]);
+    }, [summary?.checkout_token, isSummaryFetching]);
 
     const handleUnauthorized = (requestError) => {
         if (requestError?.status !== 401) return false;
@@ -159,6 +184,21 @@ function Checkout() {
             state: { backgroundLocation: { pathname: "/checkout", search: "", hash: "" } },
         });
         return true;
+    };
+
+    const handleQuantityChange = async (item, quantity) => {
+        const cartItemId = item.cart_item_id ?? item.id;
+        if (cartItemId == null || quantity < 1) return;
+
+        checkoutTokenRef.current = null;
+        setFormError("");
+        try {
+            await updateCartItemRequest({ cartItemId, quantity }).unwrap();
+        } catch (updateError) {
+            if (!handleUnauthorized(updateError)) {
+                setFormError(getErrorMessage(updateError, "Could not update quantity. Please try again."));
+            }
+        }
     };
 
     const handleCouponSubmit = async (event, code = couponInput) => {
@@ -528,7 +568,7 @@ function Checkout() {
                             <button
                                 className="checkout-page__submit"
                                 type="submit"
-                                disabled={isSubmitting || isCheckingPayment || isSummaryLoading || isSummaryFetching || isSummaryError || !summary?.checkout_token || enabledPaymentMethods.length === 0}
+                                disabled={isSubmitting || isCheckingPayment || isUpdatingCart || isSummaryLoading || isSummaryFetching || isSummaryError || !summary?.checkout_token || enabledPaymentMethods.length === 0}
                             >
                                 {submitLabel}
                                 <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
@@ -627,14 +667,37 @@ function Checkout() {
                                     const imageUrl = typeof image === "string" ? image : image?.url ?? image?.src;
                                     const quantity = Number(item.quantity ?? item.qty ?? 1);
                                     const lineTotal = item.line_total ?? item.total;
+                                    const cartItemId = item.cart_item_id ?? item.id;
+                                    const stockLimit = getStockLimit(item, product);
+                                    const itemName = product.name ?? item.name ?? "Jewellery piece";
+                                    const quantityControlsDisabled = isUpdatingCart || isSummaryFetching || cartItemId == null;
                                     return (
-                                        <article className="checkout-page__item" key={item.id ?? product.id ?? index}>
+                                        <article className="checkout-page__item" key={cartItemId ?? product.id ?? index}>
                                             <div className="checkout-page__item-image">
-                                                {imageUrl && <img src={imageUrl} alt={product.name ?? "Cart item"} />}
+                                                {imageUrl && <img src={imageUrl} alt={itemName} />}
                                             </div>
                                             <div className="checkout-page__item-info">
-                                                <h3>{product.name ?? item.name ?? "Jewellery piece"}</h3>
-                                                <p>Qty {quantity}</p>
+                                                <h3>{itemName}</h3>
+                                                <div className="checkout-page__quantity-control" aria-label={`Quantity for ${itemName}`}>
+                                                    <button
+                                                        type="button"
+                                                        aria-label={`Decrease quantity of ${itemName}`}
+                                                        disabled={quantityControlsDisabled || quantity <= 1}
+                                                        onClick={() => handleQuantityChange(item, quantity - 1)}
+                                                    >
+                                                        <span className="material-symbols-outlined" aria-hidden="true">remove</span>
+                                                    </button>
+                                                    <span aria-live="polite">{quantity}</span>
+                                                    <button
+                                                        type="button"
+                                                        aria-label={`Increase quantity of ${itemName}`}
+                                                        title={stockLimit == null ? "Stock limit is unavailable" : `Maximum ${stockLimit}`}
+                                                        disabled={quantityControlsDisabled || stockLimit == null || quantity >= stockLimit}
+                                                        onClick={() => handleQuantityChange(item, quantity + 1)}
+                                                    >
+                                                        <span className="material-symbols-outlined" aria-hidden="true">add</span>
+                                                    </button>
+                                                </div>
                                             </div>
                                             <strong>{lineTotal == null ? "—" : `₹${formatPrice(lineTotal)}`}</strong>
                                         </article>

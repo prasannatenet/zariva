@@ -14,7 +14,7 @@ const getImageUrl = (image) => typeof image === "string"
 function ProductReviews({ slug, reviews }) {
     const location = useLocation();
     const [submitReview, { isLoading }] = useSubmitProductReviewMutation();
-    const [rating, setRating] = useState(5);
+    const [rating, setRating] = useState(0);
     const [comment, setComment] = useState("");
     const [images, setImages] = useState([]);
     const [feedback, setFeedback] = useState(null);
@@ -119,7 +119,7 @@ function ProductReviews({ slug, reviews }) {
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <span
                                             key={star}
-                                            className={`material-symbols-outlined ${star <= Number(review.rating) ? "is-filled" : ""}`}
+                                            className={`material-symbols-outlined ${star <= Number(review.rating) ? "" : "is-filled"}`}
                                             aria-hidden="true"
                                         >star</span>
                                     ))}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGetSearchQuery } from "../../../store/api/productApi";
 import "./Search.css";
@@ -15,12 +15,16 @@ function Search({ isOpen = false, onClose, inline = false }) {
     const searchIsOpen = inline || isOpen;
     const [searchSuggestion, setSearchSuggestion] = useState(0);
     const [isAnimating, setIsAnimating] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
     const [query, setQuery] = useState("");
     const [debouncedQuery, setDebouncedQuery] = useState("");
+    const searchWrapperRef = useRef(null);
+    const searchInputRef = useRef(null);
     const navigate = useNavigate();
+    const showResults = searchIsOpen && isFocused && query.trim().length >= 2;
     const { data, isFetching, isError } = useGetSearchQuery(
         { q: debouncedQuery, per_page: 6 },
-        { skip: !searchIsOpen || debouncedQuery.length < 2 }
+        { skip: !showResults || debouncedQuery.length < 2 }
     );
 
     const products = data?.data || [];
@@ -34,6 +38,19 @@ function Search({ isOpen = false, onClose, inline = false }) {
 
         return () => window.clearTimeout(timeout);
     }, [query]);
+
+    useEffect(() => {
+        if (!searchIsOpen) return undefined;
+
+        const handleOutsidePointer = (event) => {
+            if (!searchWrapperRef.current?.contains(event.target)) {
+                setIsFocused(false);
+            }
+        };
+
+        document.addEventListener("pointerdown", handleOutsidePointer);
+        return () => document.removeEventListener("pointerdown", handleOutsidePointer);
+    }, [searchIsOpen]);
 
     useEffect(() => {
         if (!searchIsOpen) {
@@ -58,7 +75,18 @@ function Search({ isOpen = false, onClose, inline = false }) {
     const closeSearch = () => {
         setQuery("");
         setDebouncedQuery("");
+        setIsFocused(false);
+        searchInputRef.current?.blur();
         onClose?.();
+    };
+
+    const handleSearchIconClick = () => {
+        if (isFocused || query.trim()) {
+            closeSearch();
+            return;
+        }
+
+        searchInputRef.current?.focus();
     };
 
     const openResult = (path) => {
@@ -69,8 +97,8 @@ function Search({ isOpen = false, onClose, inline = false }) {
     return (
         <div className={`search-panel ${searchIsOpen ? "is-open" : ""} ${inline ? "search-panel--inline" : ""}`}>
             <div className="search-panel__inner">
-                <div className="search-input-wrapper">
-                    <span className="search-placeholder">
+                <div className={`search-input-wrapper${query.trim() ? " has-query" : ""}`} ref={searchWrapperRef}>
+                    <span className="search-placeholder" aria-hidden="true">
                         <span>Search:</span>
 
                         <span
@@ -81,19 +109,28 @@ function Search({ isOpen = false, onClose, inline = false }) {
                         </span>
                     </span>
                     <input
+                        ref={searchInputRef}
                         type="text"
                         aria-label="Search jewellery"
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
+                        onFocus={() => setIsFocused(true)}
                     />
 
                     {inline ? (
-                        <span className="material-symbols-outlined search-input-icon" aria-hidden="true">
-                            search
-                        </span>
+                        <button
+                            className="search-input-icon"
+                            type="button"
+                            onClick={handleSearchIconClick}
+                            aria-label={isFocused || query.trim() ? "Clear search" : "Focus search"}
+                        >
+                            <span className="material-symbols-outlined" aria-hidden="true">
+                                {isFocused || query.trim() ? "close" : "search"}
+                            </span>
+                        </button>
                     ) : null}
 
-                    {searchIsOpen && query.trim().length >= 2 ? (
+                    {showResults ? (
                         <div className="search-results" role="listbox" aria-label="Search results">
                             {isFetching ? <p className="search-results__state">Searching...</p> : null}
                             {!isFetching && isError ? <p className="search-results__state">Search is unavailable right now.</p> : null}

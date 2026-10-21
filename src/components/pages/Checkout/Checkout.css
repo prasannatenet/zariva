@@ -417,6 +417,42 @@
     font-size: 13px;
 }
 
+.checkout-page__quantity-control {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    gap: 0.8rem;
+    border: 1px solid #e6e2dd;
+}
+
+.checkout-page__quantity-control button {
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--p-900);
+    cursor: pointer;
+}
+
+.checkout-page__quantity-control button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.checkout-page__quantity-control button .material-symbols-outlined {
+    font-size: 1.8rem;
+}
+
+.checkout-page__quantity-control > span {
+    min-width: 1.4rem;
+    color: #353535;
+    font-size: 13px;
+    text-align: center;
+}
+
 .checkout-page__item > strong {
     font-size: 15px;
     white-space: nowrap;

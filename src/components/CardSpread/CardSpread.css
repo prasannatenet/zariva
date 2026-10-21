@@ -9,7 +9,7 @@
     align-items: center;
     gap: 4.4rem;
     margin: 0 auto;
-    padding: 0 7rem;
+    padding: 2rem 7rem;
 }
 
 .card-spread__image {
@@ -114,6 +114,7 @@
     .card-spread__layout {
         grid-template-columns: minmax(0, 1.4fr) minmax(24rem, 0.9fr);
         gap: 3rem;
+        padding: 0;
     }
 
     .card-spread__image {

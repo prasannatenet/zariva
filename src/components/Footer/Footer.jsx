@@ -128,7 +128,7 @@ function Footer() {
                         {address && (
                             <address>
                                 {address.split(",").map((part, i, arr) => (
-                                    <span key={i}>{part.trim()}{i < arr.length - 1 ? "," : ""}<br /></span>
+                                    <span key={i}>{part.trim()}{i < arr.length - 1 ? "," : ""}</span>
                                 ))}
                             </address>
                         )}
